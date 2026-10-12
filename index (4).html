@@ -1,0 +1,3614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento Analista de Créditos — Varzan Hnos. S.A.</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --azul: #1565C0;
+    --azul-claro: #E3F2FD;
+    --verde: #2E7D32;
+    --verde-claro: #E8F5E9;
+    --amarillo: #F9A825;
+    --amarillo-claro: #FFFDE7;
+    --rojo: #C62828;
+    --rojo-claro: #FFEBEE;
+    --gris: #455A64;
+    --gris-claro: #ECEFF1;
+    --blanco: #FFFFFF;
+    --borde: #B0BEC5;
+    --header-bg: #1565C0;
+    --header-text: #FFFFFF;
+    --subheader-bg: #1976D2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F7FA; color: #263238; font-size: 13px; }
+
+  /* ── Top banner ── */
+  .top-banner {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  .top-banner .logo-wrap { background:#fff; border-radius:6px; padding:4px 8px; display:flex; align-items:center; flex-shrink:0; }
+  .top-banner .logo-wrap img { height:52px; display:block; }
+  .top-banner .divider { width:1px; height:48px; background:rgba(255,255,255,.3); flex-shrink:0; }
+  .top-banner .banner-title { flex:1; min-width:0; }
+  .top-banner h1 { font-size: 19px; font-weight: 700; letter-spacing: .3px; }
+  .top-banner p  { font-size: 12px; opacity: .85; margin-top: 2px; }
+  /* quick-access buttons in banner */
+  .banner-nav { display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex-shrink:0; }
+  .banner-nav-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:flex-end; }
+  .banner-nav-btn {
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .18s, border-color .18s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .banner-nav-btn:hover  { background: rgba(255,255,255,.28); border-color: rgba(255,255,255,.6); }
+  .banner-nav-btn.active { background: #fff; color: #0D47A1; border-color: #fff; }
+  @media(max-width:900px){ .banner-nav { display:none; } }
+
+  /* ── Tabs ── */
+  .tab-bar { background: #0D47A1; display: flex; gap: 2px; padding: 0 16px; overflow-x: auto; }
+  .tab-btn {
+    background: rgba(255,255,255,.12); color: rgba(255,255,255,.75);
+    border: none; padding: 10px 18px; cursor: pointer; font-size: 12.5px;
+    font-family: inherit; white-space: nowrap; border-radius: 4px 4px 0 0;
+    transition: background .2s, color .2s;
+  }
+  .tab-btn:hover  { background: rgba(255,255,255,.2); color:#fff; }
+  .tab-btn.active { background: #F5F7FA; color: #0D47A1; font-weight: 700; }
+
+  /* linked tab pairs (visually grouped) */
+  .tab-btn.tab-linked-a { background: rgba(0,150,136,.30); color:#fff; border-bottom:3px solid #00695C; }
+  .tab-btn.tab-linked-a:hover { background: rgba(0,150,136,.45); color:#fff; }
+  .tab-btn.tab-linked-a.active { background:#F5F7FA; color:#00695C; font-weight:700; border-bottom:3px solid #00695C; }
+
+  .tab-btn.tab-linked-b { background: rgba(255,143,0,.30); color:#fff; border-bottom:3px solid #E65100; }
+  .tab-btn.tab-linked-b:hover { background: rgba(255,143,0,.45); color:#fff; }
+  .tab-btn.tab-linked-b.active { background:#F5F7FA; color:#E65100; font-weight:700; border-bottom:3px solid #E65100; }
+
+  .tab-btn.tab-hidden { display:none; }
+
+  /* ── Content ── */
+  .content { padding: 24px 28px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Section card ── */
+  .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1); overflow: hidden; margin-bottom: 20px; }
+  .card-header { background: var(--header-bg); color: #fff; padding: 12px 18px; }
+  .card-header h2 { font-size: 15px; font-weight: 700; }
+  .card-header p  { font-size: 11.5px; opacity: .85; margin-top: 3px; }
+  .card-body { padding: 18px; }
+
+  /* ── Tablas sin scroll horizontal (Documentación / Líneas) ── */
+  .table-wrap.no-hscroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 560px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+  }
+  .table-wrap.no-hscroll table { table-layout: fixed; width: 100%; }
+  .table-wrap.no-hscroll thead th {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 11px;
+    padding: 8px 6px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .table-wrap.no-hscroll tbody td {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 11.5px;
+    padding: 5px 6px;
+  }
+  .table-wrap.no-hscroll .cell-input,
+  .table-wrap.no-hscroll .cell-select { font-size: 11.5px; min-width: 0; }
+
+  /* ── Table wrapper ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  thead th {
+    background: var(--subheader-bg); color: #fff; padding: 9px 12px;
+    text-align: left; font-weight: 600; white-space: nowrap;
+    border: 1px solid rgba(255,255,255,.2);
+  }
+  thead th.th-center { text-align: center; }
+  tbody tr:nth-child(even) { background: #F8FAFC; }
+  tbody tr:hover { background: #EEF4FF; }
+  tbody td { padding: 6px 8px; border: 1px solid var(--borde); vertical-align: middle; color: var(--azul); }
+  tbody td.auto  { color: #263238; font-style: italic; }
+  tbody td.center { text-align: center; }
+  tbody td.empty { color: #B0BEC5; font-style: italic; font-size: 11px; }
+
+  /* inline inputs & selects inside table cells */
+  .cell-input {
+    width: 100%; border: none; background: transparent; color: var(--azul);
+    font-family: inherit; font-size: 12.5px; padding: 2px 0; outline: none;
+    min-width: 80px;
+  }
+  .cell-input:focus { border-bottom: 1px solid var(--azul); }
+  .cell-select {
+    width: 100%; border: 1px solid #90CAF9; background: #EEF4FF; color: var(--azul);
+    font-family: inherit; font-size: 12px; padding: 3px 4px; border-radius: 4px;
+    outline: none; cursor: pointer; min-width: 100px;
+  }
+  .cell-select:focus { border-color: var(--azul); }
+
+  .doc-multisel-empty { font-size: 11.5px; color: #90A4AE; font-style: italic; padding: 4px 2px; }
+
+  /* auto-computed cells */
+  .cell-auto {
+    background: var(--gris-claro); color: #263238; font-style: italic;
+    text-align: center; font-size: 12px; white-space: nowrap;
+  }
+  .badge-si   { background:#E8F5E9; color:#2E7D32; font-weight:700; padding:2px 8px; border-radius:10px; font-size:11px; }
+  .badge-no   { background:#FFEBEE; color:#C62828; font-weight:700; padding:2px 8px; border-radius:10px; font-size:11px; }
+  .badge-pend { background:#FFFDE7; color:#E65100; font-weight:700; padding:2px 8px; border-radius:10px; font-size:11px; }
+
+  /* badge states */
+  .badge { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .badge-green  { background: var(--verde-claro);    color: var(--verde); }
+  .badge-yellow { background: var(--amarillo-claro); color: #E65100; }
+  .badge-red    { background: var(--rojo-claro);     color: var(--rojo); }
+  .badge-blue   { background: var(--azul-claro);     color: var(--azul); }
+  .badge-gray   { background: var(--gris-claro);     color: var(--gris); }
+
+  /* ── Instrucciones layout ── */
+  .instr-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:20px; }
+  @media(max-width:640px){ .instr-grid { grid-template-columns:1fr; } }
+  .instr-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .instr-table th { background:var(--azul-claro); color:var(--azul); padding:8px 12px; text-align:left; font-weight:700; border:1px solid #90CAF9; }
+  .instr-table td { padding:7px 12px; border:1px solid var(--borde); vertical-align:top; }
+  .instr-table tr:nth-child(even) td { background:#F8FAFC; }
+  .step-num { width:26px; height:26px; background:var(--azul); color:#fff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; margin-right:6px; flex-shrink:0; }
+
+  .field-group { display:flex; align-items:center; gap:8px; background:var(--azul-claro); border:1px solid #90CAF9; border-radius:6px; padding:8px 14px; }
+  .field-group label { font-weight:700; color:var(--azul); font-size:12px; }
+  .field-group input { border:1px solid #90CAF9; border-radius:4px; padding:4px 8px; font-size:12px; color:var(--azul); width:140px; font-family:inherit; }
+  .alert-box { background:var(--amarillo-claro); border:1px solid var(--amarillo); border-radius:6px; padding:12px 16px; margin-top:16px; font-size:12px; color:#5D4037; display:flex; gap:8px; }
+
+  /* ── Listas / dropdown ── */
+  .dropdown-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+  .dropdown-card { background:var(--gris-claro); border-radius:6px; padding:12px 14px; border:1px solid var(--borde); }
+  .dropdown-card h4 { font-size:12px; font-weight:700; color:var(--azul); margin-bottom:8px; }
+  .dropdown-card ul { list-style:none; padding:0; margin-bottom:8px; }
+  .dropdown-card li { display:flex; align-items:center; justify-content:space-between; padding:4px 8px; margin-bottom:4px; background:#fff; border-radius:4px; border:1px solid var(--borde); font-size:12px; color:#37474F; }
+  .drop-del { background:none; border:none; color:#C62828; cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
+  .drop-del:hover { color:#B71C1C; }
+  .add-item-row { display:flex; gap:6px; margin-top:6px; align-items:stretch; }
+  .add-item-row input { flex:1; min-width:0; border:1px solid #90CAF9; border-radius:4px; padding:5px 8px; font-size:12px; font-family:inherit; color:var(--azul); }
+  .btn-add-item { flex-shrink:0; background:var(--azul); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .btn-add-item:hover { background:#0D47A1; }
+  .btn-save-lists { background:var(--verde); color:#fff; border:none; border-radius:6px; padding:9px 22px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:18px; }
+  .btn-save-lists:hover { background:#1B5E20; }
+  .save-ok { color:var(--verde); font-size:12px; font-weight:600; margin-left:10px; display:none; }
+
+  /* ── Totales rápidos ── */
+  .sheet-layout { display:flex; gap:20px; align-items:flex-start; }
+  .sheet-main { flex:1; min-width:0; }
+
+  /* btn agregar fila */
+  .btn-add-row { background:var(--azul); color:#fff; border:none; padding:7px 16px; border-radius:5px; cursor:pointer; font-size:12px; font-family:inherit; margin-top:10px; }
+  .btn-add-row:hover { background:#0D47A1; }
+  .btn-add-row.btn-secondary { background:var(--gris); }
+  .btn-add-row.btn-secondary:hover { background:#37474F; }
+  .btn-guardar-tab { background:var(--verde); color:#fff; border:none; padding:7px 16px; border-radius:5px; cursor:pointer; font-size:12px; font-family:inherit; margin-top:10px; margin-left:10px; }
+  .btn-guardar-tab:hover { background:#1B5E20; }
+
+  /* ── Íconos de comentarios / documentos en celda ── */
+  .icon-cell { display:flex; gap:6px; align-items:center; justify-content:center; }
+  .icon-btn {
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:5px; border:1px solid #90CAF9; background:#EEF4FF; color:var(--azul);
+    cursor:pointer; font-size:12px; line-height:1; padding:0; position:relative;
+  }
+  .icon-btn:hover { background:#DCEBFF; }
+  .icon-btn.icon-del { border-color:#EF9A9A; background:#FFEBEE; color:var(--rojo); }
+  .icon-btn.icon-del:hover { background:#FFCDD2; }
+  .icon-btn .icon-badge {
+    position:absolute; top:-6px; right:-6px; background:var(--azul); color:#fff; border-radius:50%;
+    font-size:9px; min-width:14px; height:14px; display:flex; align-items:center; justify-content:center;
+    padding:0 2px; font-weight:700;
+  }
+
+  /* ── Modal genérico (comentarios / documentos) ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(15,25,35,.55); z-index:200;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-box {
+    background:#fff; border-radius:10px; width:100%; max-width:520px; max-height:85vh; overflow-y:auto;
+    box-shadow:0 10px 40px rgba(0,0,0,.3); padding:20px 22px;
+  }
+  .modal-box h3 { font-size:15px; color:var(--azul); margin-bottom:4px; }
+  .modal-box .modal-sub { font-size:11.5px; color:#78909C; margin-bottom:14px; }
+  .modal-close { float:right; background:none; border:none; font-size:18px; color:#78909C; cursor:pointer; line-height:1; }
+  .modal-section { margin-bottom:18px; }
+  .modal-section h4 { font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#455A64; margin-bottom:8px; }
+  .modal-doc-list { display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; border:1px solid var(--borde); border-radius:6px; padding:8px; }
+  .modal-doc-item { display:flex; align-items:center; gap:8px; font-size:12.5px; color:#263238; cursor:pointer; }
+  .modal-comment-list { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+  .modal-comment-item { background:var(--gris-claro); border:1px solid var(--borde); border-radius:8px; padding:10px 12px; }
+  .modal-comment-item .mc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .modal-comment-item .mc-usuario { font-weight:700; color:var(--azul); font-size:12px; }
+  .modal-comment-item .mc-fecha { font-size:10.5px; color:#78909C; }
+  .modal-comment-item .mc-texto { font-size:12.5px; color:#263238; white-space:pre-wrap; }
+  .modal-comment-item .mc-actions { display:flex; gap:6px; margin-top:6px; }
+  .modal-comment-item.mc-editing { border-color:var(--azul); box-shadow:0 0 0 2px rgba(21,101,192,.15); }
+  .modal-comment-item .mc-editado { font-size:10.5px; color:#78909C; font-style:italic; margin-top:3px; }
+  .mc-btn { border:1px solid var(--borde); background:#fff; border-radius:4px; padding:3px 9px; font-size:11px; font-family:inherit; cursor:pointer; color:#455A64; }
+  .mc-btn:hover { background:var(--gris-claro); }
+  .mc-btn.mc-btn-del { border-color:#EF9A9A; color:var(--rojo); }
+  .mc-btn.mc-btn-del:hover { background:#FFEBEE; }
+  .mc-filtros { display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .mc-chip {
+    border:1px solid var(--borde); background:#fff; border-radius:14px; padding:4px 12px;
+    font-size:11px; font-family:inherit; cursor:pointer; color:#455A64;
+  }
+  .mc-chip:hover { background:var(--gris-claro); }
+  .mc-chip.active { background:var(--azul); border-color:var(--azul); color:#fff; font-weight:700; }
+  .modal-note { font-size:11.5px; color:#E65100; background:#FFF8E1; border:1px solid #FFE082; border-radius:6px; padding:8px 10px; margin-bottom:10px; }
+  .modal-textarea {
+    width:100%; border:1px solid #90CAF9; border-radius:6px; padding:8px 10px; font-family:inherit;
+    font-size:12.5px; color:#263238; resize:vertical; min-height:70px;
+  }
+  .modal-actions { display:flex; gap:8px; margin-top:10px; justify-content:flex-end; }
+  .modal-btn { border:none; border-radius:5px; padding:7px 14px; font-size:12px; font-family:inherit; cursor:pointer; }
+  .modal-btn-save { background:var(--azul); color:#fff; }
+  .modal-btn-save:hover { background:#0D47A1; }
+  .modal-btn-del { background:var(--rojo); color:#fff; }
+  .modal-btn-del:hover { background:#B71C1C; }
+  .modal-btn-cancel { background:var(--gris-claro); color:#455A64; }
+  .modal-btn-cancel:hover { background:#CFD8DC; }
+
+  /* ── Barra de filtros / exportación ── */
+  .filter-bar { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .filter-group { display:flex; align-items:center; gap:6px; }
+  .filter-group label { font-size:12px; color:var(--azul); font-weight:600; }
+  .filter-count { font-size:11.5px; color:#455A64; font-style:italic; white-space:nowrap; }
+  .filter-actions { display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink:0; }
+  .btn-export {
+    background:var(--verde); color:#fff; border:none; border-radius:5px;
+    padding:7px 14px; font-size:12px; font-weight:600; cursor:pointer;
+    font-family:inherit; white-space:nowrap;
+  }
+  .btn-export:hover { background:#1B5E20; }
+  .btn-export:disabled { background:#B0BEC5; cursor:not-allowed; }
+  .filter-sep { font-size:11.5px; color:#78909C; }
+
+  /* indicador de autoguardado */
+  .save-status { font-size:11.5px; margin-left:12px; color:#78909C; font-style:italic; }
+  .save-status.saving  { color:#E65100; font-style:normal; }
+  .save-status.saved   { color:var(--verde); font-style:normal; }
+  .save-status.error   { color:var(--rojo); font-weight:700; font-style:normal; }
+  .btn-reintentar {
+    background:var(--rojo); color:#fff; border:none; border-radius:5px;
+    padding:6px 12px; font-size:11.5px; font-family:inherit; cursor:pointer; margin-left:8px;
+  }
+  .btn-reintentar:hover { background:#B71C1C; }
+
+  /* contador de pendientes en el encabezado */
+  .banner-pend { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .banner-pend:empty { display:none; }
+  .pend-area {
+    display:flex; align-items:center; gap:5px;
+    background: rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3);
+    border-radius:6px; padding:4px 8px;
+  }
+  .pend-label { font-size:11px; font-weight:700; color:#fff; white-space:nowrap; }
+  .pend-chip {
+    border:none; border-radius:10px; padding:3px 9px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; white-space:nowrap;
+  }
+  .pend-chip.chip-hoy  { background:#FFE0B2; color:#E65100; }
+  .pend-chip.chip-hoy:hover  { background:#FFCC80; }
+  .pend-chip.chip-venc { background:#FFCDD2; color:#B71C1C; }
+  .pend-chip.chip-venc:hover { background:#EF9A9A; }
+  .pend-chip.chip-cero { background: rgba(255,255,255,.18); color: rgba(255,255,255,.75); cursor:default; font-weight:600; }
+  .pend-ok { font-size:11px; color:#C8E6C9; font-weight:700; white-space:nowrap; }
+
+  /* chips de "solo pendientes" en la barra de filtros */
+  .pend-filtro { display:flex; align-items:center; gap:5px; }
+  .pend-filtro .mc-chip { padding:4px 10px; }
+
+  /* celdas con selector de calendario */
+  .cell-date {
+    width:100%; border:1px solid #90CAF9; background:#fff; color:var(--azul);
+    font-family:inherit; font-size:11.5px; padding:2px 4px; border-radius:4px;
+    outline:none; min-width:0;
+  }
+  .cell-date:focus { border-color:var(--azul); box-shadow:0 0 0 2px rgba(21,101,192,.15); }
+  .cell-date::-webkit-calendar-picker-indicator { padding:0; margin-left:2px; opacity:.6; cursor:pointer; }
+  .cell-date::-webkit-calendar-picker-indicator:hover { opacity:1; }
+  .table-wrap.no-hscroll .cell-date { font-size:11px; }
+
+  /* fila con gestión vencida (fecha pasada y sin resolver) */
+  tbody tr.row-vencida { background:#FFF4F4; }
+  tbody tr.row-vencida:hover { background:#FFE9E9; }
+  tbody tr.row-vencida td.cell-vencida { color:var(--rojo); font-weight:700; }
+
+  /* ── Buscador de clientes ── */
+  .search-box { margin-bottom:14px; }
+  .search-input { width:100%; max-width:380px; border:1px solid #90CAF9; border-radius:6px; padding:8px 12px; font-size:12.5px; font-family:inherit; color:var(--azul); background:#fff; }
+  .search-input:focus { outline:none; border-color:var(--azul); box-shadow:0 0 0 2px rgba(21,101,192,.15); }
+  .date-filter-input { border:1px solid #90CAF9; border-radius:6px; padding:7px 10px; font-size:12.5px; font-family:inherit; color:var(--azul); background:#fff; }
+  .date-filter-input:focus { outline:none; border-color:var(--azul); box-shadow:0 0 0 2px rgba(21,101,192,.15); }
+  .btn-clear-filter { background:none; border:1px solid var(--borde); border-radius:6px; padding:6px 10px; font-size:11.5px; cursor:pointer; color:#455A64; font-family:inherit; }
+  .btn-clear-filter:hover { background:var(--gris-claro); }
+  .file-picker-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--gris); color:#fff; border:none; border-radius:5px;
+    padding:7px 14px; font-size:12px; font-weight:600; cursor:pointer;
+    font-family:inherit; white-space:nowrap;
+  }
+  .file-picker-btn:hover { background:#37474F; }
+  .file-picker-name {
+    font-size:12px; color:#455A64; font-style:italic;
+    max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:inline-block; vertical-align:middle;
+  }
+
+  /* ── Carga de base de clientes ── */
+  .upload-box { background:var(--azul-claro); border:1px solid #90CAF9; border-radius:8px; padding:14px 16px; margin-bottom:18px; }
+  .upload-row { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
+  .upload-row input[type="file"] { font-size:11.5px; max-width:220px; }
+  .upload-row input[type="month"] { border:1px solid #90CAF9; border-radius:4px; padding:5px 8px; font-size:12px; font-family:inherit; color:var(--azul); background:#fff; }
+  .upload-row .btn-add-row { margin-top:0; }
+  .param-field { display:inline-flex; align-items:center; gap:8px; background:var(--azul-claro); border:1px solid #90CAF9; border-radius:6px; padding:8px 14px; }
+  .param-field label { font-weight:700; color:var(--azul); font-size:12px; }
+  .param-field input { border:1px solid #90CAF9; border-radius:4px; padding:4px 8px; font-size:12px; color:var(--azul); width:80px; font-family:inherit; }
+
+  /* ── Asignación mensual (v22) ── */
+  .asig-resumen { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin:12px 0; }
+  .asig-kpi { background:var(--gris-claro); border:1px solid var(--borde); border-radius:6px; padding:8px 10px; }
+  .asig-kpi b { display:block; font-size:18px; color:var(--azul); }
+  .asig-kpi span { font-size:11px; color:#455A64; }
+  .asig-bloque { border:1px solid var(--borde); border-radius:8px; padding:12px 14px; margin-top:14px; background:#fff; }
+  .asig-bloque h3 { font-size:14px; color:var(--azul); margin-bottom:4px; }
+  .asig-tabla { width:100%; border-collapse:collapse; font-size:11.5px; margin-top:8px; }
+  .asig-tabla th { background:var(--azul-claro); color:var(--azul); padding:5px 8px; text-align:left; border:1px solid #90CAF9; }
+  .asig-tabla td { padding:4px 8px; border:1px solid var(--borde); color:#263238; }
+  .asig-scroll { max-height:260px; overflow-y:auto; }
+  .asig-aviso { font-size:11.5px; color:#5D4037; background:var(--amarillo-claro); border:1px solid var(--amarillo); border-radius:6px; padding:8px 10px; margin-top:8px; }
+  .dnl-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+  .dnl-row input, .dnl-row select { border:1px solid #90CAF9; border-radius:4px; padding:5px 8px; font-size:12px; font-family:inherit; color:var(--azul); background:#fff; }
+  .dnl-list { list-style:none; padding:0; margin-top:10px; display:flex; flex-direction:column; gap:4px; }
+  .dnl-list li { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 10px; background:var(--gris-claro); border:1px solid var(--borde); border-radius:4px; font-size:12px; color:#37474F; }
+</style>
+</head>
+<body>
+
+<!-- ══ TOP BANNER ══ -->
+<div class="top-banner">
+  <div class="logo-wrap">
+    <img src="data:image/jpeg;base64,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R/8ACCX/ANn/ALNOvTnSN3/HvtG7b/d3elbuteGbbV9ATSBI0ECbdpQdAvSrUoxe+7uS4uSOc8TwJol3oWvQxhFiZYZ9owNjDvWx47dZPBF86nKtGCK1NX0WHV9Dk0yZiEdAu8dRjvUF34eF54X/ALElupCPKEZmxycd6l1E7N9GUotXSOc1+7Nt8LraND+8uYY4EHu1ZmvaT4mj8GCK4k042tpGsiiNGEg29O9ddf8AhOG/0/S7OS5kEVg6vwB+82jjNbV7Zpe6fNZuSElQoT6U1VjHbuS6be5wur3f25fBt1nPmSqxPvtFaXxKnC+EpLcHMtxLHGi9z81EvgXdpGmWMWqTxPp7s8cwUZ5qxZ+DEGoRX2qaldalNCcxibAVT64FDlC6d9h2lqjBntv7M8d+GXk4V7QwZPqBWh8RG85NGsk5kmvkKj6VueIvDsWvWsSmV7e4gfzIZ06o1Z2m+EbldYh1TWdUfUJ7cEQLt2qnvj1pqom1JvYOVq6RlXkSS/Fu0jkRWX7EeGGRU3hpxonjPVtEYbIpv9Kg9Pet+Tw5HJ4si17z3EkcJi8rHB96bq3hqPU9ZstUS4eC4tdy5QffU9jS9qmuV7WDka1OS0Jddv8AW9a1HSZLFUkuDGTcozEhfTBrQ8B+dYatrel3Zj+0JKJiIxhfm9M10nh7QovD+nG0jlaUtI0jOw5JNRw+HooPFE+uRzuHniEbxY4OO9EqsXePSwKD0ZtnpXFeA/8Aj+8Q/wDX+1drWPomgR6LNfyRzPIbyczMGH3Se1ZQklFplyTbRz+hQRTePvEIliR8eXjcue1dFruoRaFoN1doqp5SHYoGMt2rJuvB10+tXepWOuXNk9zjesaKen1qKbwVe3vlR6j4hu7u3SRZDE6KA2PpWjak1d6Eq66HL6bZXfhK/wBI1u7diuofJek9mc5BrqfiUc+DZT/01j/9Crc13RYNc0iXT5WMasBtdRyhHQiq2q+HBq3hyPSLi7k+UJmbAy22m6ilKMmJQaTSIfEv/Ih3n/Xp/SuY8T/8kn0//chrutQ0tdQ0SXTGkZFki8reByKzdT8KRaj4Xh0M3UkaRKgEoAz8tTGcV945Rf4G7bf8e0X+4P5VLXJx+FtZjKAeKr7YuPl8tOnp0rq1BCAE5IHX1rKaSd07lxvaw6iiipKCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q==" alt="Varzan Hnos. S.A.">
+  </div>
+  <div class="divider"></div>
+  <div class="banner-title">
+    <h1>Planilla de Seguimiento — Analista de Créditos</h1>
+    <p>CRM de Créditos — Registro de Gestiones</p>
+  </div>
+  <div class="banner-nav" id="banner-nav">
+    <div class="banner-pend" id="banner-pend" title="Gestiones con fecha de hoy o ya vencidas. Hacé clic en un número para ver solo esos clientes."></div>
+    <div class="banner-nav-row">
+      <button class="banner-nav-btn" id="bnav-cargardatos" onclick="solicitarAccesoYEjecutar(function(){ showTab('cargardatos', null); })">📥 Cargar Datos</button>
+      <button class="banner-nav-btn" id="bnav-listas" onclick="solicitarAccesoYEjecutar(function(){ showTab('listas', null); })">🗂 Listas</button>
+      <button class="banner-nav-btn" onclick="mostrarSelectorUsuario(false)">🙍 <span id="bnav-usuario-actual">Elegir usuario</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="error-banner" style="display:none;background:#FFEBEE;color:#B71C1C;border-bottom:2px solid #EF5350;padding:10px 20px;font-size:12.5px;font-weight:600;text-align:center;"></div>
+
+<!-- ══ TABS ══ -->
+<div class="tab-bar">
+  <button class="tab-btn tab-linked-a active" onclick="showTab('carpetas',this)">1. Nuevas Solicitudes</button>
+  <button class="tab-btn tab-linked-a" onclick="showTab('tiempos',this)">2. Tiempos de Respuesta</button>
+  <button class="tab-btn tab-linked-b" onclick="showTab('documentacion',this)">3. Actualización de Documentos</button>
+  <button class="tab-btn tab-linked-b" onclick="showTab('lineas',this)">4. Asignación / Actualización de LC</button>
+</div>
+
+<div class="content">
+
+<!-- ══════════════ 1. NUEVAS SOLICITUDES ══════════════ -->
+<div id="carpetas" class="tab-panel active">
+  <div class="card">
+    <div class="card-header">
+      <h2>1. Seguimiento — Nuevas Solicitudes</h2>
+    </div>
+    <div class="card-body">
+      <div class="search-box filter-bar">
+        <input type="text" id="carp-search" class="search-input" placeholder="🔎 Buscar por código, cliente o N° de solicitud..." oninput="renderCarpetasTable()">
+        <div class="filter-group">
+          <label>Fecha Ingreso Docs.:</label>
+          <input type="date" id="carp-desde" class="date-filter-input" title="Desde" oninput="renderCarpetasTable()">
+          <span class="filter-sep">a</span>
+          <input type="date" id="carp-hasta" class="date-filter-input" title="Hasta" oninput="renderCarpetasTable()">
+        </div>
+        <button type="button" class="btn-clear-filter" onclick="limpiarFiltrosCarpetas()">✕ Limpiar</button>
+        <div class="filter-actions">
+          <span class="filter-count" id="carp-count"></span>
+          <button type="button" class="btn-export" onclick="exportarExcel('carpetas')">📊 Exportar a Excel</button>
+        </div>
+      </div>
+
+      <div class="table-wrap no-hscroll">
+        <table id="tbl-carpetas">
+          <thead>
+            <tr>
+              <th class="th-center" style="width:3%">N°</th>
+              <th style="width:6%">Fecha Ingreso Docs.</th>
+              <th style="width:6%">Código Cliente</th>
+              <th style="width:7%">Nro. Documento (CI/RUC)</th>
+              <th style="width:14%">Cliente / Razón Social</th>
+              <th style="width:5%">N° Solicitud</th>
+              <th style="width:8%">Vendedor</th>
+              <th style="width:8%">Tipo de Crédito</th>
+              <th style="width:6%">Fecha de Análisis</th>
+              <th style="width:6%">Fecha de Resolución</th>
+              <th style="width:10%">Resolución Analista</th>
+              <th style="width:10%">Observación del Analista</th>
+              <th class="th-center" style="width:6%">Comentarios</th>
+              <th class="th-center" style="width:5%">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-carpetas">
+            <tr id="carp-empty">
+              <td colspan="14" class="empty" style="text-align:center;padding:20px;">✏️ Sin registros. Presione "+ Agregar fila" para comenzar.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn-add-row" onclick="addCarpetaRow()">+ Agregar fila</button>
+      <span id="carp-guardar-status" class="save-status"></span>
+      <button type="button" id="carp-reintentar" class="btn-reintentar" onclick="guardarCarpetasManual()" hidden>🔄 Reintentar ahora</button>
+      <div style="font-size:11px;color:#78909C;margin-top:8px;">* Fecha Ingreso Docs., Código Cliente, Nro. Documento y Cliente / Razón Social son obligatorios: la fila no se guardará hasta completarlos.<br>* La hora de ingreso y la hora de resolución se registran solas y se ven en la pestaña <b>Tiempos de Respuesta</b>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 2. TIEMPOS DE RESPUESTA ══════════════ -->
+<div id="tiempos" class="tab-panel">
+  <div class="card">
+    <div class="card-header">
+      <h2>2. Seguimiento — Tiempos de Respuesta</h2>
+      <p>Se genera automáticamente desde Nuevas Solicitudes. La hora de ingreso se sella al crear la solicitud y la hora de resolución al cargar la Resolución Analista. El Excel incluye además las <b>Hs Transcurridas</b> entre ingreso y resolución.</p>
+    </div>
+    <div class="card-body">
+      <div class="search-box filter-bar">
+        <div class="filter-actions">
+          <span class="filter-count" id="tiem-count"></span>
+          <button type="button" class="btn-export" onclick="exportarExcel('tiempos')">📊 Exportar a Excel</button>
+        </div>
+      </div>
+      <div class="table-wrap no-hscroll">
+        <table id="tbl-tiempos">
+          <thead>
+            <tr>
+              <th class="th-center" style="width:3%">N°</th>
+              <th style="width:9%">Fecha Ingreso Docs.</th>
+              <th class="th-center" style="width:8%">Hora Ingreso Docs.</th>
+              <th style="width:8%">Código Cliente</th>
+              <th style="width:10%">Nro. Documento (CI/RUC)</th>
+              <th style="width:21%">Cliente / Razón Social</th>
+              <th style="width:8%">N° Solicitud</th>
+              <th style="width:10%">Vendedor</th>
+              <th style="width:10%">Tipo de Crédito</th>
+              <th style="width:9%">Fecha de Resolución</th>
+              <th class="th-center" style="width:8%">Hora de Resolución</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-tiempos">
+            <tr id="tiem-empty">
+              <td colspan="11" class="empty" style="text-align:center;padding:20px;">⚡ Los registros se generan automáticamente al agregar filas en Nuevas Solicitudes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 3. ACTUALIZACIÓN DE DOCUMENTOS ══════════════ -->
+<div id="documentacion" class="tab-panel">
+  <div class="card">
+    <div class="card-header">
+      <h2>3. Seguimiento — Actualización de Documentos</h2>
+    </div>
+    <div class="card-body">
+      <div class="search-box filter-bar">
+        <input type="text" id="doc-search" class="search-input" placeholder="🔎 Buscar por código o nombre de cliente..." oninput="renderDocTable()">
+        <div class="filter-group">
+          <label>Fecha de Gestión Programada:</label>
+          <input type="date" id="doc-prog-desde" class="date-filter-input" title="Desde" oninput="renderDocTable()">
+          <span class="filter-sep">a</span>
+          <input type="date" id="doc-prog-hasta" class="date-filter-input" title="Hasta" oninput="renderDocTable()">
+        </div>
+        <div class="filter-group">
+          <label>Fecha de Próxima Gestión:</label>
+          <input type="date" id="doc-prox-desde" class="date-filter-input" title="Desde" oninput="renderDocTable()">
+          <span class="filter-sep">a</span>
+          <input type="date" id="doc-prox-hasta" class="date-filter-input" title="Hasta" oninput="renderDocTable()">
+        </div>
+        <div class="pend-filtro" id="doc-asig-chips"></div>
+        <div class="pend-filtro" id="doc-pend-chips"></div>
+        <button type="button" class="btn-clear-filter" onclick="limpiarFiltrosDoc()">✕ Limpiar</button>
+        <div class="filter-actions">
+          <span class="filter-count" id="doc-count"></span>
+          <button type="button" class="btn-export" onclick="exportarExcel('documentacion')">📊 Exportar a Excel</button>
+        </div>
+      </div>
+
+      <div class="table-wrap no-hscroll">
+        <table id="tbl-doc">
+          <thead>
+            <tr>
+              <th class="th-center" style="width:3%">N°</th>
+              <th style="width:9%">Código Cliente</th>
+              <th style="width:10%">Nro. Documento (CI/RUC)</th>
+              <th style="width:22%">Cliente / Razón Social</th>
+              <th style="width:9%">Fecha de Gestión Programada</th>
+              <th style="width:8%">Fecha de Gestión</th>
+              <th style="width:13%">Tipo de Respuesta Últ. Gestión</th>
+              <th style="width:9%">Fecha de Próxima Gestión</th>
+              <th class="th-center" style="width:9%">Documento a Actualizar</th>
+              <th class="th-center" style="width:8%">Comentarios</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-doc">
+            <tr id="doc-empty">
+              <td colspan="10" class="empty" style="text-align:center;padding:20px;">📤 Sin base cargada. Suba el archivo de clientes para comenzar.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 4. ASIGNACIÓN / ACTUALIZACIÓN DE LÍNEAS DE CRÉDITO ══════════════ -->
+<div id="lineas" class="tab-panel">
+  <div class="card">
+    <div class="card-header">
+      <h2>4. Seguimiento — Asignación / Actualización de Líneas de Crédito</h2>
+    </div>
+    <div class="card-body">
+      <div class="search-box filter-bar">
+        <input type="text" id="lin-search" class="search-input" placeholder="🔎 Buscar por código o nombre de cliente..." oninput="renderLineasTable()">
+        <div class="filter-group">
+          <label>Fecha de Gestión Programada:</label>
+          <input type="date" id="lin-prog-desde" class="date-filter-input" title="Desde" oninput="renderLineasTable()">
+          <span class="filter-sep">a</span>
+          <input type="date" id="lin-prog-hasta" class="date-filter-input" title="Hasta" oninput="renderLineasTable()">
+        </div>
+        <div class="filter-group">
+          <label>Fecha de Próxima Gestión:</label>
+          <input type="date" id="lin-prox-desde" class="date-filter-input" title="Desde" oninput="renderLineasTable()">
+          <span class="filter-sep">a</span>
+          <input type="date" id="lin-prox-hasta" class="date-filter-input" title="Hasta" oninput="renderLineasTable()">
+        </div>
+        <div class="pend-filtro" id="lin-asig-chips"></div>
+        <div class="pend-filtro" id="lin-pend-chips"></div>
+        <button type="button" class="btn-clear-filter" onclick="limpiarFiltrosLineas()">✕ Limpiar</button>
+        <div class="filter-actions">
+          <span class="filter-count" id="lin-count"></span>
+          <button type="button" class="btn-export" onclick="exportarExcel('lineas')">📊 Exportar a Excel</button>
+        </div>
+      </div>
+
+      <div class="table-wrap no-hscroll">
+        <table id="tbl-lineas">
+          <thead>
+            <tr>
+              <th class="th-center" style="width:3%">N°</th>
+              <th style="width:8%">Código Cliente</th>
+              <th style="width:9%">Nro. Documento (CI/RUC)</th>
+              <th style="width:17%">Cliente / Razón Social</th>
+              <th style="width:9%">Línea de Crédito Actual GS.</th>
+              <th style="width:8%">Fecha de Gestión Programada</th>
+              <th style="width:8%">Fecha de Gestión</th>
+              <th style="width:12%">Tipo de Respuesta Últ. Gestión</th>
+              <th style="width:8%">Fecha de Próxima Gestión</th>
+              <th style="width:10%">Línea de Crédito Nueva GS.</th>
+              <th class="th-center" style="width:8%">Comentarios</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-lineas">
+            <tr id="lin-empty">
+              <td colspan="11" class="empty" style="text-align:center;padding:20px;">📤 Sin base cargada. Suba el archivo de clientes para comenzar.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CARGAR DATOS ══════════════ -->
+<div id="cargardatos" class="tab-panel">
+  <div class="card">
+    <div class="card-header">
+      <h2>📤 Carga de Cartera de Clientes</h2>
+      <p>Cargue el archivo con <b>toda la cartera</b> (una fila por cliente). Los clientes se cruzan por <b>Código Cliente</b>: los nuevos se agregan y los existentes conservan sus gestiones y comentarios. Cargar la cartera <b>no asigna</b> clientes: eso se hace con <b>Asignar mes</b>.</p>
+    </div>
+    <div class="card-body">
+      <div class="upload-box">
+        <div class="upload-row">
+          <div class="field-group">
+            <label>Cartera de Clientes (.csv / .xlsx):</label>
+            <label for="unif-file-input" class="file-picker-btn">📁 Seleccionar archivo</label>
+            <span id="unif-file-name" class="file-picker-name">Ningún archivo seleccionado</span>
+            <input type="file" id="unif-file-input" accept=".csv,.xlsx,.xls" style="display:none;" onchange="onUnifFileSelected(this)">
+          </div>
+          <button class="btn-add-row" onclick="solicitarAccesoYEjecutar(cargarCartera)">📤 Cargar Cartera</button>
+          <button class="btn-add-row btn-secondary" onclick="descargarPlantillaUnificada()">📥 Descargar Plantilla</button>
+        </div>
+        <div id="unif-upload-status" style="font-size:11.5px;margin-top:10px;color:#455A64;"></div>
+      </div>
+      <div class="alert-box">
+        <span style="font-size:16px">ℹ️</span>
+        <span>Una fila por cliente, con <b>Código Cliente</b> obligatorio. Las filas sin código se descartan y, si un código se repite, se toma la primera fila. Los clientes que ya estaban en la plataforma y no vienen en el archivo <b>se conservan</b>. Los documentos a actualizar no vienen en el archivo: los marca la analista al gestionar la cuenta.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>📅 Asignar mes</h2>
+      <p>Asigna a la bandeja de la analista la cantidad de cuentas definida en <b>Cuentas a asignar por mes</b>, repartidas entre los días hábiles del mes (sin sábados, domingos ni días no laborables cargados en Listas). Se calcula por separado para <b>Actualización de Documentos</b> y para <b>Líneas de Crédito</b>.</p>
+    </div>
+    <div class="card-body">
+      <div class="upload-row">
+        <div class="field-group">
+          <label>Mes a asignar:</label>
+          <input type="month" id="asig-mes">
+        </div>
+        <button class="btn-add-row" onclick="solicitarAccesoYEjecutar(previsualizarAsignacion)">👁 Vista previa de la asignación</button>
+      </div>
+      <div id="asig-preview"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" style="background:#B71C1C;">
+      <h2>🗑️ Limpiar Todas las Tablas</h2>
+      <p>Reinicia Nuevas Solicitudes, Tiempos de Respuesta, Actualización de Documentos y Líneas de Crédito. Use esto para empezar de cero (por ejemplo, luego de pruebas). Esta acción no se puede deshacer.</p>
+    </div>
+    <div class="card-body">
+      <button class="btn-add-row" style="background:#C62828;" onclick="limpiarTodasLasTablas()">🗑️ Limpiar Todas las Tablas</button>
+      <div id="limpiar-status" style="font-size:11.5px;margin-top:10px;color:#455A64;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ LISTAS ══════════════ -->
+<div id="listas" class="tab-panel">
+  <div class="card">
+    <div class="card-header">
+      <h2>⚙️ Parámetros Generales</h2>
+      <p>Configuración utilizada por las distintas hojas de seguimiento.</p>
+    </div>
+    <div class="card-body">
+      <div class="param-field">
+        <label>Cuentas a asignar por mes:</label>
+        <input type="number" id="param-min-clientes" min="1">
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn-save-lists" onclick="saveParams()">💾 Guardar Parámetros</button>
+        <span class="save-ok" id="save-ok-params">✔ Guardado correctamente</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h2>🗓 Días no laborables del analista</h2>
+      <p>Feriados, vacaciones y permisos. Esos días no reciben asignaciones, y al guardar se reprograman las gestiones ya asignadas que caigan en ellos (solo las que todavía no tienen Fecha de Gestión).</p>
+    </div>
+    <div class="card-body">
+      <div class="dnl-row">
+        <label style="font-size:12px;font-weight:600;color:var(--azul);">Desde</label>
+        <input type="date" id="dnl-desde">
+        <label style="font-size:12px;font-weight:600;color:var(--azul);">Hasta</label>
+        <input type="date" id="dnl-hasta" title="Opcional: dejar vacío si es un solo día">
+        <select id="dnl-tipo">
+          <option>Feriado</option><option>Vacaciones</option><option>Permiso</option>
+        </select>
+        <input type="text" id="dnl-detalle" placeholder="Detalle (opcional)" style="min-width:180px;">
+        <button class="btn-add-item" onclick="agregarDiaNoLaborable()">+ Agregar</button>
+      </div>
+      <ul class="dnl-list" id="dnl-list"></ul>
+      <div style="display:flex;align-items:center;margin-top:14px;">
+        <button class="btn-save-lists" style="margin-top:0;" onclick="guardarDiasNoLaborables()">💾 Guardar y reprogramar</button>
+        <span class="save-ok" id="save-ok-dnl">✔ Guardado correctamente</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h2>🗂 Listas de Validación</h2>
+      <p>Administre las opciones de los campos desplegables. Los cambios se guardan en el navegador y se aplican a todas las hojas.</p>
+    </div>
+    <div class="card-body">
+      <div class="dropdown-grid" id="listas-grid">
+        <!-- rendered by JS -->
+      </div>
+      <div style="display:flex;align-items:center;margin-top:18px;">
+        <button class="btn-save-lists" onclick="saveLists()">💾 Guardar Listas</button>
+        <span class="save-ok" id="save-ok-msg">✔ Guardado correctamente</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- ══ MODAL GENÉRICO: Comentarios / Documentos ══ -->
+<div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this) closeCommentsModal();">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- ══ MODAL: Selección de usuario ══ -->
+<div id="modal-usuario-overlay" class="modal-overlay">
+  <div class="modal-box" id="modal-usuario-box"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  API — conexión a Google Sheets (Base_Operativa_Varzan)
+// ═══════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbygm798PzRfLKz-0mmnzQAUATK1-Y7dXR02LipGGOwYke-oy31pTi1e79u-sxMz7NZAUA/exec';
+
+// Nombre de usuario actual, para trazabilidad (columna modificado_por).
+// Se guarda en localStorage SOLO como preferencia de este navegador (no es dato compartido).
+function getUsuarioActual() {
+  return localStorage.getItem('varzan_usuario_actual') || 'Sin identificar';
+}
+
+function actualizarBannerUsuario() {
+  const el = document.getElementById('bnav-usuario-actual');
+  if (el) el.textContent = localStorage.getItem('varzan_usuario_actual') || 'Elegir usuario';
+}
+
+// ── Selector de usuario (lista fija, editable en Listas → Usuarios del Sistema) ──
+function mostrarSelectorUsuario(obligatorio) {
+  const box = document.getElementById('modal-usuario-box');
+  const actual = localStorage.getItem('varzan_usuario_actual') || '';
+  const items = getListOptions('usuarios');
+  const options = items.map(u => {
+    const safe = u.replace(/"/g,'&quot;');
+    return `<option value="${safe}" ${u === actual ? 'selected' : ''}>${u}</option>`;
+  }).join('');
+
+  box.innerHTML = `
+    ${obligatorio ? '' : '<button type="button" class="modal-close" onclick="cerrarSelectorUsuario()">✕</button>'}
+    <h3>🙍 ¿Quién sos?</h3>
+    <div class="modal-sub">Se usa para registrar quién carga cada gestión y comentario.</div>
+    <div class="modal-section">
+      ${items.length
+        ? `<select id="selector-usuario-input" class="cell-select" style="width:100%;font-size:13px;padding:8px;">
+             <option value="">— Seleccioná tu nombre —</option>
+             ${options}
+           </select>`
+        : `<div class="modal-note">Todavía no hay usuarios cargados. Pedile a un administrador que los agregue en la pestaña "Listas" (protegida con contraseña), en "Usuarios del Sistema".</div>`
+      }
+    </div>
+    <div class="modal-actions">
+      ${!obligatorio ? '<button type="button" class="modal-btn modal-btn-cancel" onclick="cerrarSelectorUsuario()">Cancelar</button>' : ''}
+      <button type="button" class="modal-btn modal-btn-save" onclick="confirmarSelectorUsuario()">Confirmar</button>
+    </div>
+  `;
+  document.getElementById('modal-usuario-overlay').classList.add('open');
+}
+
+function cerrarSelectorUsuario() {
+  document.getElementById('modal-usuario-overlay').classList.remove('open');
+}
+
+function confirmarSelectorUsuario() {
+  const sel = document.getElementById('selector-usuario-input');
+  const val = sel ? sel.value : '';
+  if (!val) { alert('Seleccioná tu nombre de la lista antes de confirmar.'); return; }
+  localStorage.setItem('varzan_usuario_actual', val);
+  actualizarBannerUsuario();
+  cerrarSelectorUsuario();
+}
+
+// ═══════════════════════════════════════════════
+//  COMENTARIOS (multiusuario) + selección de documentos — modal genérico
+//  Usado en: Carpetas (1), Documentación (3, incluye checklist de docs) y Líneas (4)
+// ═══════════════════════════════════════════════
+// modalCtx.editandoId: id del comentario propio que se está editando (null = se está agregando uno nuevo)
+let modalCtx = null; // { tipo: 'carpetas'|'documentacion'|'lineas', idx, editandoId }
+
+// Cada comentario es un registro independiente: { id, usuario, fecha, texto, editadoEl? }.
+// El id permite editar o borrar un comentario puntual sin tocar el resto del historial.
+// Filtro de antigüedad del historial de comentarios: 0 = todos, 7 y 30 = últimos N días.
+let comentariosFiltroDias = 0;
+function setComentariosFiltro(dias) {
+  comentariosFiltroDias = dias;
+  renderCommentsModal();
+}
+
+let _comentarioSeq = 0;
+function nuevoComentarioId() {
+  _comentarioSeq += 1;
+  return 'c' + Date.now().toString(36) + '-' + _comentarioSeq.toString(36);
+}
+
+function getDataArrayForTipo(tipo) {
+  if (tipo === 'carpetas') return carpetasData;
+  if (tipo === 'documentacion') return docClients;
+  if (tipo === 'lineas') return lineaClients;
+  return null;
+}
+
+function saveDataForTipo(tipo) {
+  if (tipo === 'carpetas') return saveCarpetasToStorage();
+  if (tipo === 'documentacion') return saveDocClientsToStorage();
+  if (tipo === 'lineas') return saveLineaClientsToStorage();
+  return Promise.resolve();
+}
+
+function getRowComentarios(tipo, idx) {
+  const arr = getDataArrayForTipo(tipo);
+  if (!arr || !arr[idx]) return [];
+  if (!Array.isArray(arr[idx].comentarios)) arr[idx].comentarios = [];
+  // Compatibilidad: los comentarios guardados antes del historial no tienen id; se les asigna uno.
+  arr[idx].comentarios.forEach(c => { if (c && !c.id) c.id = nuevoComentarioId(); });
+  return arr[idx].comentarios;
+}
+
+// Historial ordenado del más reciente al más antiguo (para ver primero la última gestión).
+function getRowComentariosOrdenados(tipo, idx) {
+  return getRowComentarios(tipo, idx)
+    .slice()
+    .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
+}
+
+function buildIconCellHTML(tipo, idx) {
+  const count = getRowComentarios(tipo, idx).length;
+  const titulo = count
+    ? `Ver historial de comentarios (${count}) / agregar uno nuevo`
+    : 'Agregar comentario';
+  return `
+    <div class="icon-cell">
+      <button type="button" class="icon-btn" title="${titulo}" onclick="openCommentsModal('${tipo}',${idx})">💬${count ? `<span class="icon-badge">${count}</span>` : ''}</button>
+    </div>`;
+}
+
+function buildEyeCellHTML(idx) {
+  const c = docClients[idx];
+  if (!c) return '';
+  const selected = docSelectedArr(c);
+  const label = selected.length ? `${selected.length} doc.` : 'Sin elegir';
+  return `
+    <div class="icon-cell">
+      <button type="button" class="icon-btn" title="Ver / seleccionar documentos" onclick="openCommentsModal('documentacion',${idx})">👁</button>
+      <span style="font-size:11px;color:#455A64;white-space:nowrap;">${label}</span>
+    </div>`;
+}
+
+function refreshRowCommentCell(tipo, idx) {
+  let tr = null;
+  if (tipo === 'carpetas') tr = document.querySelector(`#tbody-carpetas tr[data-idx="${idx}"]`);
+  if (tipo === 'documentacion') tr = document.querySelector(`#tbody-doc tr[data-idx="${idx}"]`);
+  if (tipo === 'lineas') tr = document.querySelector(`#tbody-lineas tr[data-idx="${idx}"]`);
+  if (!tr) return;
+  const cell = tr.querySelector('.comment-cell');
+  if (cell) cell.innerHTML = buildIconCellHTML(tipo, idx);
+  if (tipo === 'documentacion') {
+    const eyeCell = tr.querySelector('.doc-eye-cell');
+    if (eyeCell) eyeCell.innerHTML = buildEyeCellHTML(idx);
+  }
+}
+
+function openCommentsModal(tipo, idx) {
+  modalCtx = { tipo, idx, editandoId: null };
+  comentariosFiltroDias = 0;
+  renderCommentsModal();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeCommentsModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  modalCtx = null;
+}
+
+async function onModalDocCheck(cb) {
+  if (!modalCtx || modalCtx.tipo !== 'documentacion') return;
+  const idx = modalCtx.idx;
+  const panel = cb.closest('.modal-doc-list');
+  const checked = Array.from(panel.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+  docClients[idx].documentoActualizar = checked.join('; ');
+  refreshRowCommentCell('documentacion', idx);
+  const resultado = await saveDocClientsToStorage();
+  if (!resultado || !resultado.ok) {
+    alert('⚠️ La selección de documentos no se pudo confirmar en la planilla compartida (falló la conexión). Volvé a intentarlo.');
+  }
+}
+
+// Agrega un comentario nuevo al historial, o guarda la edición del comentario propio
+// que se esté editando (modalCtx.editandoId). Nunca sobrescribe comentarios anteriores.
+async function saveCommentFromModal() {
+  if (!modalCtx) return;
+  const { tipo, idx, editandoId } = modalCtx;
+  const textEl = document.getElementById('modal-comment-text');
+  const texto = textEl ? textEl.value.trim() : '';
+  if (!texto) { alert('Escribí un comentario antes de guardar.'); return; }
+  const usuario = getUsuarioActual();
+  const arr = getDataArrayForTipo(tipo);
+  if (!arr || !arr[idx]) return;
+  const comentarios = getRowComentarios(tipo, idx);
+  const now = new Date().toISOString();
+
+  if (editandoId) {
+    const c = comentarios.find(x => x.id === editandoId);
+    if (!c) { modalCtx.editandoId = null; renderCommentsModal(); return; }
+    if (c.usuario !== usuario) { alert('Solo podés editar tus propios comentarios.'); return; }
+    c.texto = texto;
+    c.editadoEl = now;
+  } else {
+    comentarios.push({ id: nuevoComentarioId(), usuario, fecha: now, texto });
+  }
+
+  modalCtx.editandoId = null;
+  refreshRowCommentCell(tipo, idx);
+  renderCommentsModal();
+  const resultado = await saveDataForTipo(tipo);
+  if (!resultado || !resultado.ok) {
+    alert('⚠️ El comentario se muestra en pantalla, pero no se pudo confirmar el guardado en la planilla compartida (falló la conexión). No cierres esta ventana todavía: revisá tu conexión y volvé a presionar "Guardar" para reintentarlo.');
+  }
+}
+
+function editarComentario(id) {
+  if (!modalCtx) return;
+  const usuario = getUsuarioActual();
+  const c = getRowComentarios(modalCtx.tipo, modalCtx.idx).find(x => x.id === id);
+  if (!c) return;
+  if (c.usuario !== usuario) { alert('Solo podés editar tus propios comentarios.'); return; }
+  modalCtx.editandoId = id;
+  renderCommentsModal();
+  const textEl = document.getElementById('modal-comment-text');
+  if (textEl) { textEl.focus(); textEl.setSelectionRange(textEl.value.length, textEl.value.length); }
+}
+
+function cancelarEdicionComentario() {
+  if (!modalCtx) return;
+  modalCtx.editandoId = null;
+  renderCommentsModal();
+}
+
+// Elimina un comentario puntual del historial (solo los propios).
+async function eliminarComentario(id) {
+  if (!modalCtx) return;
+  const { tipo, idx } = modalCtx;
+  const usuario = getUsuarioActual();
+  const comentarios = getRowComentarios(tipo, idx);
+  const c = comentarios.find(x => x.id === id);
+  if (!c) return;
+  if (c.usuario !== usuario) { alert('Solo podés eliminar tus propios comentarios.'); return; }
+  if (!confirm('¿Eliminar este comentario del historial? Esta acción no se puede deshacer.')) return;
+  const arr = getDataArrayForTipo(tipo);
+  arr[idx].comentarios = comentarios.filter(x => x.id !== id);
+  if (modalCtx.editandoId === id) modalCtx.editandoId = null;
+  refreshRowCommentCell(tipo, idx);
+  renderCommentsModal();
+  const resultado = await saveDataForTipo(tipo);
+  if (!resultado || !resultado.ok) {
+    alert('⚠️ No se pudo confirmar el borrado en la planilla compartida (falló la conexión). El comentario podría volver a aparecer al recargar; probá de nuevo.');
+  }
+}
+
+// En Nuevas Solicitudes el nombre del cliente vive en el input de la fila, no en el modelo.
+function nombreFilaParaModal(tipo, idx, row) {
+  if (tipo === 'carpetas') {
+    const tr = document.querySelector(`#tbody-carpetas tr[data-idx="${idx}"]`);
+    const inp = tr ? tr.querySelector('input[data-field="cliente"]') : null;
+    const nombre = inp && inp.value ? inp.value.trim() : '';
+    if (nombre) return nombre;
+  }
+  return (row && (row.nombreCliente || row.cliente)) || ('#' + (idx + 1));
+}
+
+function renderCommentsModal() {
+  if (!modalCtx) return;
+  const { tipo, idx } = modalCtx;
+  const arr = getDataArrayForTipo(tipo);
+  const row = arr ? arr[idx] : null;
+  if (!row) { closeCommentsModal(); return; }
+  const usuario = getUsuarioActual();
+  const todos = getRowComentariosOrdenados(tipo, idx);
+  const comentarios = comentariosFiltroDias
+    ? todos.filter(c => {
+        const f = c.fecha ? new Date(c.fecha) : null;
+        if (!f || isNaN(f)) return false;
+        const corte = new Date();
+        corte.setHours(0,0,0,0);
+        corte.setDate(corte.getDate() - comentariosFiltroDias);
+        return f >= corte;
+      })
+    : todos;
+  const editandoId = modalCtx.editandoId || null;
+  const enEdicion = editandoId ? comentarios.find(c => c.id === editandoId) : null;
+  if (editandoId && !enEdicion) modalCtx.editandoId = null;
+
+  let docsHTML = '';
+  if (tipo === 'documentacion') {
+    const selected = docSelectedArr(row);
+    const items = getListOptions('documentoTipo');
+    const checks = items.map(it => {
+      const checked = selected.includes(it) ? 'checked' : '';
+      const safeIt = it.replace(/"/g,'&quot;');
+      return `<label class="modal-doc-item"><input type="checkbox" value="${safeIt}" ${checked} onchange="onModalDocCheck(this)"> ${it}</label>`;
+    }).join('');
+    docsHTML = `
+      <div class="modal-section">
+        <h4>📄 Documentos a actualizar</h4>
+        <div class="modal-doc-list">${checks || '<div class="doc-multisel-empty">Sin documentos configurados en Listas.</div>'}</div>
+      </div>`;
+  }
+
+  const listHTML = comentarios.length ? comentarios.map(c => {
+    const isOwn = c.usuario === usuario;
+    const fechaObj = c.fecha ? new Date(c.fecha) : null;
+    const fechaStr = fechaObj ? (fmtDate(fechaObj) + ' ' + fmtTime(fechaObj)) : '';
+    const textoSafe = (c.texto||'').replace(/</g,'&lt;');
+    const editObj = c.editadoEl ? new Date(c.editadoEl) : null;
+    const editadoHTML = editObj
+      ? `<div class="mc-editado">editado el ${fmtDate(editObj)} ${fmtTime(editObj)}</div>`
+      : '';
+    const accionesHTML = isOwn ? `
+        <div class="mc-actions">
+          <button type="button" class="mc-btn" onclick="editarComentario('${c.id}')">✏️ Editar</button>
+          <button type="button" class="mc-btn mc-btn-del" onclick="eliminarComentario('${c.id}')">🗑️ Eliminar</button>
+        </div>` : '';
+    return `
+      <div class="modal-comment-item${c.id === editandoId ? ' mc-editing' : ''}">
+        <div class="mc-head">
+          <span class="mc-usuario">${c.usuario}${isOwn ? ' (vos)' : ''}</span>
+          <span class="mc-fecha">${fechaStr}</span>
+        </div>
+        <div class="mc-texto">${textoSafe}</div>
+        ${editadoHTML}
+        ${accionesHTML}
+      </div>`;
+  }).join('') : `<div class="modal-note" style="background:var(--gris-claro);border-color:var(--borde);color:#78909C;">${
+        todos.length
+          ? `Sin comentarios en los últimos ${comentariosFiltroDias} días. Hay ${todos.length} en total: presioná "Todos".`
+          : 'Todavía no hay comentarios en esta fila.'
+      }</div>`;
+
+  const chip = (dias, etiqueta) =>
+    `<button type="button" class="mc-chip${comentariosFiltroDias === dias ? ' active' : ''}" onclick="setComentariosFiltro(${dias})">${etiqueta}</button>`;
+  const filtrosHTML = todos.length ? `
+    <div class="mc-filtros">
+      ${chip(0, 'Todos')}${chip(7, 'Últ. 7 días')}${chip(30, 'Últ. 30 días')}
+    </div>` : '';
+
+  const noteHTML = enEdicion
+    ? '<div class="modal-note">Estás editando un comentario ya cargado. Si lo que querés es dejar una gestión nueva, presioná "Cancelar edición" y escribí abajo.</div>'
+    : '';
+
+  const formLabel = enEdicion ? 'Editando mi comentario' : 'Agregar un comentario nuevo';
+  const formHTML = `
+    <div class="modal-section">
+      <h4>${formLabel}</h4>
+      ${noteHTML}
+      <textarea class="modal-textarea" id="modal-comment-text" placeholder="Escribí tu comentario...">${enEdicion ? (enEdicion.texto||'').replace(/</g,'&lt;') : ''}</textarea>
+      <div class="modal-actions">
+        ${enEdicion ? `<button type="button" class="modal-btn modal-btn-cancel" onclick="cancelarEdicionComentario()">Cancelar edición</button>` : ''}
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCommentsModal()">Cerrar</button>
+        <button type="button" class="modal-btn modal-btn-save" onclick="saveCommentFromModal()">${enEdicion ? 'Guardar cambios' : 'Agregar comentario'}</button>
+      </div>
+    </div>`;
+
+  const box = document.getElementById('modal-box');
+  box.innerHTML = `
+    <button type="button" class="modal-close" onclick="closeCommentsModal()">✕</button>
+    <h3>💬 ${tipo === 'documentacion' ? 'Documentos y Comentarios' : 'Comentarios'}</h3>
+    <div class="modal-sub">Fila: ${nombreFilaParaModal(tipo, idx, row)}</div>
+    ${docsHTML}
+    <div class="modal-section">
+      <h4>Historial de comentarios ${todos.length ? `(${comentariosFiltroDias ? comentarios.length + ' de ' + todos.length : todos.length})` : ''}</h4>
+      ${filtrosHTML}
+      <div class="modal-comment-list">${listHTML}</div>
+    </div>
+    ${formHTML}
+  `;
+}
+
+// Listar todas las filas de una hoja. Devuelve un array de objetos (o [] si falla).
+async function apiListar(hoja) {
+  try {
+    const resp = await fetch(`${API_URL}?hoja=${encodeURIComponent(hoja)}`);
+    const json = await resp.json();
+    if (!json.ok) { console.error('apiListar error:', json.error); return []; }
+    return json.data;
+  } catch (e) {
+    console.error('apiListar fallo de red:', e);
+    return null; // null indica fallo de conexión (distinto de "sin datos")
+  }
+}
+
+// Agregar una fila nueva a una hoja.
+async function apiAgregar(hoja, fila) {
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ accion: 'agregar', hoja, fila, usuario: getUsuarioActual() })
+    });
+    return await resp.json();
+  } catch (e) { console.error('apiAgregar fallo de red:', e); return { ok: false, error: String(e) }; }
+}
+
+// Actualizar una fila existente. clave = {campo, valor} o {row: N}
+async function apiActualizar(hoja, clave, valores) {
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ accion: 'actualizar', hoja, clave, valores, usuario: getUsuarioActual() })
+    });
+    return await resp.json();
+  } catch (e) { console.error('apiActualizar fallo de red:', e); return { ok: false, error: String(e) }; }
+}
+
+// Eliminar una fila. clave = {campo, valor} o {row: N}
+async function apiEliminar(hoja, clave) {
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ accion: 'eliminar', hoja, clave })
+    });
+    return await resp.json();
+  } catch (e) { console.error('apiEliminar fallo de red:', e); return { ok: false, error: String(e) }; }
+}
+
+// Reemplazar todo el contenido de una hoja (usado en carga masiva y reset).
+async function apiReemplazarTodo(hoja, filas) {
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ accion: 'reemplazarTodo', hoja, filas, usuario: getUsuarioActual() })
+    });
+    return await resp.json();
+  } catch (e) { console.error('apiReemplazarTodo fallo de red:', e); return { ok: false, error: String(e) }; }
+}
+
+// ═══════════════════════════════════════════════
+//  GUARDA DE CONCURRENCIA  (v21)
+//  Cada guardado reescribe la hoja ENTERA con lo que esta pestaña tiene en
+//  memoria. Si otra persona (u otra pestaña) grabó algo desde que esta pestaña
+//  cargó los datos, guardar pisaría ese trabajo en silencio.
+//  Por eso, antes de escribir se relee la hoja y se compara con la huella que
+//  se tomó al cargarla. Si no coinciden, NO se guarda: se avisa y se ofrece
+//  recargar. Los datos de esta pestaña quedan intactos en pantalla.
+// ═══════════════════════════════════════════════
+
+const HUELLAS = {};        // hoja -> huella del contenido que esta pestaña cargó
+let _avisoDesfaseAbierto = false;
+
+function huellaDeFilas(filas) {
+  const txt = JSON.stringify(filas || []);
+  let h = 5381;
+  for (let i = 0; i < txt.length; i++) { h = ((h * 33) ^ txt.charCodeAt(i)) >>> 0; }
+  return txt.length + ':' + h.toString(36);
+}
+
+function registrarHuella(hoja, filas) { HUELLAS[hoja] = huellaDeFilas(filas); }
+
+function avisarDesfase(hoja) {
+  const banner = document.getElementById('error-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.innerHTML = '⛔ <b>No se guardó.</b> Otra persona modificó la planilla (' + hoja +
+      ') desde que se abrió esta pantalla. Si se guardara ahora, se perderían esos cambios. ' +
+      '<button type="button" onclick="location.reload()" style="margin-left:8px;padding:4px 10px;cursor:pointer;">🔄 Recargar ahora</button>';
+  }
+  if (!_avisoDesfaseAbierto) {
+    _avisoDesfaseAbierto = true;
+    alert('⛔ No se guardó.\n\nOtra persona modificó la planilla desde que se abrió esta pantalla. ' +
+          'Guardar ahora borraría su trabajo.\n\nRecargá la página (se pierde solo lo que acabás de tipear) ' +
+          'y volvé a cargar el cambio.');
+    setTimeout(() => { _avisoDesfaseAbierto = false; }, 30000);
+  }
+}
+
+// Guarda solo si la hoja no cambió desde que esta pestaña la cargó.
+// Devuelve {ok, desfase} — desfase: true si se abortó por conflicto.
+async function apiGuardarSiNoCambio(hoja, filas) {
+  const actuales = await apiListar(hoja);
+  if (actuales === null) return { ok: false, error: 'sin conexión' }; // no se pudo verificar: no se escribe
+  const huellaPrevia = HUELLAS[hoja];
+  if (huellaPrevia !== undefined && huellaDeFilas(actuales) !== huellaPrevia) {
+    console.warn('Guardado abortado: la hoja', hoja, 'cambió desde que se cargó.');
+    avisarDesfase(hoja);
+    return { ok: false, desfase: true };
+  }
+  const r = await apiReemplazarTodo(hoja, filas);
+  if (r && r.ok) {
+    const despues = await apiListar(hoja);
+    if (despues !== null) registrarHuella(hoja, despues);
+  }
+  return r;
+}
+
+// Aviso visual simple cuando falla la conexión a la nube (no bloqueante).
+function avisarFalloConexion(contexto) {
+  console.warn('Sin conexión con la planilla compartida:', contexto);
+  const banner = document.getElementById('error-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.textContent = `⚠️ No se pudo conectar con la planilla compartida (${contexto}). Los datos podrían no estar actualizados. Verificá tu conexión a internet y recargá la página.`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  HELPERS COMPARTIDOS DE FILTRO / VENCIMIENTO / EXPORTACIÓN
+// ═══════════════════════════════════════════════
+function valorDe(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+// Convierte una fecha (Date, string ISO o null) al formato aaaa-mm-dd que usan los <input type="date">.
+function aISO(d) {
+  if (!d) return '';
+  const f = (d instanceof Date) ? d : new Date(d);
+  if (isNaN(f)) return '';
+  return `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(f.getDate()).padStart(2,'0')}`;
+}
+
+function actualizarContadorFiltro(id, mostrados, total) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!total) { el.textContent = ''; return; }
+  el.textContent = (mostrados === total)
+    ? `${total} registro${total === 1 ? '' : 's'}`
+    : `Mostrando ${mostrados} de ${total} registros`;
+}
+
+// Una gestión está vencida cuando su Fecha de Próxima Gestión (o, si no hay, la
+// Fecha de Gestión Programada) ya pasó y el tipo de respuesta no da por cerrado el caso.
+function gestionVencida(c) {
+  if (!c) return false;
+  if (RESPUESTAS_CERRADAS.includes(String(c.tipoRespuesta || '').trim())) return false;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const prox = parseDateInput(c.proximaGestion);
+  if (prox) { prox.setHours(0,0,0,0); return prox < hoy; }
+  if (!c.fechaGestion && c.fechaProgramada) {
+    const prog = new Date(c.fechaProgramada); prog.setHours(0,0,0,0);
+    return prog < hoy;
+  }
+  return false;
+}
+
+// Horas transcurridas entre el ingreso de documentos y la resolución.
+// No se muestra en pantalla: se calcula solo para el Excel de Tiempos de Respuesta.
+function hsTranscurridas(c) {
+  const ini = combinarFechaHora(c.fechaIngresoDocs, c.horaIngresoDocs);
+  const fin = combinarFechaHora(c.fechaResolucion, c.horaResolucion);
+  if (!ini || !fin) return '';
+  const hs = (fin - ini) / 3600000;
+  return hs < 0 ? '' : Math.round(hs * 10) / 10;
+}
+
+function combinarFechaHora(fechaTexto, horaTexto) {
+  const d = parseDateInput(fechaTexto);
+  if (!d) return null;
+  const hhmm = normalizarHora(horaTexto);
+  if (hhmm) {
+    const [h, mi] = hhmm.split(':').map(Number);
+    d.setHours(h, mi, 0, 0);
+  } else {
+    d.setHours(0, 0, 0, 0);
+  }
+  return d;
+}
+
+// Aplana el historial de comentarios a una celda de texto, para la exportación a Excel.
+function comentariosATexto(comentarios) {
+  if (!Array.isArray(comentarios) || !comentarios.length) return '';
+  return comentarios
+    .slice()
+    .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')))
+    .map(c => {
+      const f = c.fecha ? new Date(c.fecha) : null;
+      const fStr = f && !isNaN(f) ? `${fmtDate(f)} ${fmtTime(f)}` : '';
+      return `[${fStr}] ${c.usuario || ''}: ${c.texto || ''}`;
+    })
+    .join('\n');
+}
+
+// Compara una fecha contra un rango Desde/Hasta (ambos opcionales) en formato aaaa-mm-dd.
+// `valor` puede ser un Date, un ISO string o un texto dd/mm/aaaa.
+function enRango(valor, desde, hasta) {
+  if (!desde && !hasta) return true;
+  const iso = (valor instanceof Date || (valor && String(valor).includes('T')))
+    ? aISO(valor)
+    : aISO(parseDateInput(valor));
+  if (!iso) return false;
+  if (desde && iso < desde) return false;
+  if (hasta && iso > hasta) return false;
+  return true;
+}
+
+// Celda de fecha con selector de calendario. Internamente se sigue guardando dd/mm/aaaa,
+// que es el formato que esperan la planilla de Google y el tablero de indicadores.
+function celdaFecha(valorTexto, campo, handler) {
+  const iso = aISO(parseDateInput(valorTexto));
+  return `<input class="cell-date" type="date" value="${iso}" data-field="${campo}" onchange="${handler}(this)">`;
+}
+
+// Traduce el valor aaaa-mm-dd de un <input type="date"> a dd/mm/aaaa.
+function fechaDesdeInput(inp) {
+  if (!inp.value) return '';
+  const [a, m, d] = inp.value.split('-').map(Number);
+  if (!a || !m || !d) return '';
+  return fmtDate(new Date(a, m - 1, d));
+}
+
+// ═══════════════════════════════════════════════
+//  PENDIENTES DEL DÍA (encabezado)
+//  Suma las gestiones de Actualización de Documentos y Líneas de Crédito
+//  cuya fecha de próxima gestión (o la programada, si nunca se gestionó)
+//  cae hoy o ya pasó y cuyo tipo de respuesta no cierra el caso.
+// ═══════════════════════════════════════════════
+function esDeHoy(c) {
+  if (!c) return false;
+  if (RESPUESTAS_CERRADAS.includes(String(c.tipoRespuesta || '').trim())) return false;
+  const hoyISO = aISO(new Date());
+  const prox = aISO(parseDateInput(c.proximaGestion));
+  if (prox) return prox === hoyISO;
+  if (!c.fechaGestion && c.fechaProgramada) return aISO(c.fechaProgramada) === hoyISO;
+  return false;
+}
+
+// Cuenta por área, sin sumar: cada pestaña muestra lo suyo.
+function contarPendientes(arr) {
+  const lista = arr || [];
+  return {
+    hoy: lista.filter(esDeHoy).length,
+    vencidas: lista.filter(gestionVencida).length
+  };
+}
+
+function actualizarPendientes() {
+  const cont = document.getElementById('banner-pend');
+  if (!cont) return;
+
+  const areas = [
+    { destino: 'documentacion', icono: '📄', etiqueta: 'Documentos', datos: docClients },
+    { destino: 'lineas',        icono: '💳', etiqueta: 'Líneas de Crédito', datos: lineaClients }
+  ];
+
+  cont.innerHTML = areas.map(a => {
+    const { hoy, vencidas } = contarPendientes(a.datos);
+    if (!a.datos || !a.datos.length) return '';
+    if (!hoy && !vencidas) {
+      return `<div class="pend-area"><span class="pend-label">${a.icono} ${a.etiqueta}</span><span class="pend-ok">✅ al día</span></div>`;
+    }
+    const chipHoy = hoy
+      ? `<button type="button" class="pend-chip chip-hoy" title="Ver solo las gestiones de hoy en ${a.etiqueta}" onclick="irAPendientes('${a.destino}','hoy')">${hoy} hoy</button>`
+      : `<span class="pend-chip chip-cero">0 hoy</span>`;
+    const chipVenc = vencidas
+      ? `<button type="button" class="pend-chip chip-venc" title="Ver solo las gestiones vencidas en ${a.etiqueta}" onclick="irAPendientes('${a.destino}','vencidas')">${vencidas} venc.</button>`
+      : `<span class="pend-chip chip-cero">0 venc.</span>`;
+    return `<div class="pend-area"><span class="pend-label">${a.icono} ${a.etiqueta}</span>${chipHoy}${chipVenc}</div>`;
+  }).join('');
+}
+
+// Lleva a la pestaña indicada y deja filtrados solo esos clientes.
+// modo: 'hoy' | 'vencidas' | '' (sin filtro de pendientes)
+function irAPendientes(destino, modo) {
+  if (destino === 'documentacion') {
+    limpiarFiltrosDoc();
+    docPendFiltro = modo || '';
+    renderDocTable();
+    showTab('documentacion', document.querySelector('.tab-bar .tab-btn:nth-child(3)'));
+  } else {
+    limpiarFiltrosLineas();
+    linPendFiltro = modo || '';
+    renderLineasTable();
+    showTab('lineas', document.querySelector('.tab-bar .tab-btn:nth-child(4)'));
+  }
+}
+
+// Estado del filtro "solo pendientes" de cada pestaña.
+let docPendFiltro = '';
+let linPendFiltro = '';
+
+function setPendFiltro(tabla, modo) {
+  if (tabla === 'doc') { docPendFiltro = (docPendFiltro === modo) ? '' : modo; renderDocTable(); }
+  else { linPendFiltro = (linPendFiltro === modo) ? '' : modo; renderLineasTable(); }
+}
+
+// Dibuja los chips Todas / Hoy / Vencidas de una pestaña, con el estado actual marcado.
+function renderPendFiltroChips(tabla) {
+  const cont = document.getElementById(tabla === 'doc' ? 'doc-pend-chips' : 'lin-pend-chips');
+  if (!cont) return;
+  const actual = tabla === 'doc' ? docPendFiltro : linPendFiltro;
+  const chip = (modo, etiqueta) =>
+    `<button type="button" class="mc-chip${actual === modo ? ' active' : ''}" onclick="setPendFiltro('${tabla}','${modo}')">${etiqueta}</button>`;
+  cont.innerHTML = `<span class="filter-sep">Pendientes:</span>${chip('hoy','De hoy')}${chip('vencidas','Vencidas')}`;
+}
+
+// ¿La fila pasa el filtro de pendientes activo?
+function pasaFiltroPendientes(c, modo) {
+  if (!modo) return true;
+  if (modo === 'hoy') return esDeHoy(c);
+  if (modo === 'vencidas') return gestionVencida(c);
+  return true;
+}
+
+// ═══════════════════════════════════════════════
+//  AUTOGUARDADO CON INDICADOR
+//  Agrupa los cambios rápidos (tipeo) en un solo envío y muestra el estado.
+// ═══════════════════════════════════════════════
+const AUTOSAVE_DELAY = 800;
+const _autosave = {};
+
+function mostrarEstadoGuardado(statusId, estado, detalle) {
+  const el = document.getElementById(statusId);
+  if (!el) return;
+  el.classList.remove('saving', 'saved', 'error');
+  const btnReintentar = document.getElementById('carp-reintentar');
+  if (estado === 'guardando') {
+    el.classList.add('saving');
+    el.textContent = '⏳ Guardando…';
+    if (btnReintentar && statusId === 'carp-guardar-status') btnReintentar.hidden = true;
+  } else if (estado === 'guardado') {
+    el.classList.add('saved');
+    const ahora = new Date();
+    el.textContent = `✔ Guardado ${fmtTime(ahora)}` + (detalle ? ` — ${detalle}` : '');
+    if (btnReintentar && statusId === 'carp-guardar-status') btnReintentar.hidden = true;
+  } else if (estado === 'error') {
+    el.classList.add('error');
+    el.textContent = '❌ No se pudo guardar (sin conexión con la planilla).';
+    if (btnReintentar && statusId === 'carp-guardar-status') btnReintentar.hidden = false;
+  } else {
+    el.textContent = '';
+  }
+}
+
+// Programa un guardado diferido. clave identifica la tabla; fn devuelve la promesa de guardado.
+function programarGuardado(clave, fn, statusId) {
+  if (_autosave[clave]) clearTimeout(_autosave[clave]);
+  if (statusId) mostrarEstadoGuardado(statusId, 'guardando');
+  _autosave[clave] = setTimeout(async () => {
+    _autosave[clave] = null;
+    const r = await fn();
+    if (!statusId) return;
+    if (!r || !r.ok) {
+      mostrarEstadoGuardado(statusId, 'error');
+    } else {
+      const incompletas = r.incompletas || 0;
+      mostrarEstadoGuardado(statusId, 'guardado',
+        incompletas ? `⚠️ ${incompletas} fila(s) sin campos obligatorios no se guardaron` : '');
+    }
+  }, AUTOSAVE_DELAY);
+}
+
+// ═══════════════════════════════════════════════
+//  EXPORTACIÓN A EXCEL (pestañas 1, 3 y 4)
+//  Exporta exactamente lo que está a la vista: si hay filtros puestos, se respetan.
+// ═══════════════════════════════════════════════
+const EXPORT_CONFIG = {
+  carpetas: {
+    hoja: 'Nuevas Solicitudes',
+    archivo: 'Nuevas_Solicitudes',
+    indices: () => carpetasIndicesFiltrados(),
+    datos: () => carpetasData,
+    fila: c => ({
+      'Fecha Ingreso Docs.': c.fechaIngresoDocs || '',
+      'Hora Ingreso Docs.': c.horaIngresoDocs || '',
+      'Código Cliente': c.codigoCliente || '',
+      'Nro. Documento (CI/RUC)': c.nroDocumento || '',
+      'Cliente / Razón Social': c.cliente || '',
+      'N° Solicitud': c.nroSolicitud || '',
+      'Vendedor': c.vendedor || '',
+      'Tipo de Crédito': c.tipoCredito || '',
+      'Fecha de Análisis': c.fechaAnalisis || '',
+      'Fecha de Resolución': c.fechaResolucion || '',
+      'Hora de Resolución': c.horaResolucion || '',
+      'Resolución Analista': c.resolucionAnalista || '',
+      'Observación del Analista': c.obsAnalistaComite || '',
+      'Comentarios': comentariosATexto(c.comentarios)
+    })
+  },
+  tiempos: {
+    hoja: 'Tiempos de Respuesta',
+    archivo: 'Tiempos_de_Respuesta',
+    indices: () => carpetasData.map((c, i) => i),
+    datos: () => carpetasData,
+    fila: c => ({
+      'Fecha Ingreso Docs.': c.fechaIngresoDocs || '',
+      'Hora Ingreso Docs.': c.horaIngresoDocs || '',
+      'Código Cliente': c.codigoCliente || '',
+      'Nro. Documento (CI/RUC)': c.nroDocumento || '',
+      'Cliente / Razón Social': c.cliente || '',
+      'N° Solicitud': c.nroSolicitud || '',
+      'Vendedor': c.vendedor || '',
+      'Tipo de Crédito': c.tipoCredito || '',
+      'Resolución Analista': c.resolucionAnalista || '',
+      'Observación del Analista': c.obsAnalistaComite || '',
+      'Fecha de Resolución': c.fechaResolucion || '',
+      'Hora de Resolución': c.horaResolucion || '',
+      'Hs Transcurridas': hsTranscurridas(c)
+    })
+  },
+  documentacion: {
+    hoja: 'Actualización Documentos',
+    archivo: 'Actualizacion_Documentos',
+    indices: () => docIndicesFiltrados(),
+    datos: () => docClients,
+    fila: c => ({
+      'Código Cliente': c.codigoCliente || '',
+      'Nro. Documento (CI/RUC)': c.nroDocumento || '',
+      'Cliente / Razón Social': c.nombreCliente || '',
+      'Fecha de Gestión Programada': c.fechaProgramada ? fmtDate(new Date(c.fechaProgramada)) : '',
+      'Fecha de Gestión': c.fechaGestion || '',
+      'Tipo de Respuesta Últ. Gestión': c.tipoRespuesta || '',
+      'Fecha de Próxima Gestión': c.proximaGestion || '',
+      'Gestión Vencida': gestionVencida(c) ? 'SÍ' : 'NO',
+      'Documento a Actualizar': c.documentoActualizar || '',
+      'Comentarios': comentariosATexto(c.comentarios)
+    })
+  },
+  lineas: {
+    hoja: 'Líneas de Crédito',
+    archivo: 'Lineas_de_Credito',
+    indices: () => lineasIndicesFiltrados(),
+    datos: () => lineaClients,
+    fila: c => ({
+      'Código Cliente': c.codigoCliente || '',
+      'Nro. Documento (CI/RUC)': c.nroDocumento || '',
+      'Cliente / Razón Social': c.nombreCliente || '',
+      'Línea de Crédito Actual GS.': c.lineaVigente ? Number(String(c.lineaVigente).replace(/[^\d]/g,'')) || 0 : '',
+      'Fecha de Gestión Programada': c.fechaProgramada ? fmtDate(new Date(c.fechaProgramada)) : '',
+      'Fecha de Gestión': c.fechaGestion || '',
+      'Tipo de Respuesta Últ. Gestión': c.tipoRespuesta || '',
+      'Fecha de Próxima Gestión': c.proximaGestion || '',
+      'Gestión Vencida': gestionVencida(c) ? 'SÍ' : 'NO',
+      'Línea de Crédito Nueva GS.': c.nuevaLinea ? Number(String(c.nuevaLinea).replace(/[^\d]/g,'')) || 0 : '',
+      'Comentarios': comentariosATexto(c.comentarios)
+    })
+  }
+};
+
+function exportarExcel(tipo) {
+  const cfg = EXPORT_CONFIG[tipo];
+  if (!cfg) return;
+  if (typeof XLSX === 'undefined') {
+    alert('No se pudo cargar la librería de Excel. Verificá tu conexión a internet y recargá la página.');
+    return;
+  }
+  const datos = cfg.datos();
+  const indices = cfg.indices();
+  if (!indices.length) { alert('No hay registros para exportar con los filtros actuales.'); return; }
+
+  const filas = indices.map(i => cfg.fila(datos[i]));
+  const ws = XLSX.utils.json_to_sheet(filas);
+
+  // Ancho de columna aproximado según el contenido (máximo 45 caracteres).
+  const cols = Object.keys(filas[0]);
+  ws['!cols'] = cols.map(k => {
+    const largo = Math.max(k.length, ...filas.map(f => String(f[k] ?? '').split('\n')[0].length));
+    return { wch: Math.min(Math.max(largo + 2, 10), 45) };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, cfg.hoja.substring(0, 31));
+  const hoy = new Date();
+  const sello = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `${cfg.archivo}_${sello}.xlsx`);
+}
+
+// ═══════════════════════════════════════════════
+//  LISTAS — estructura central
+// ═══════════════════════════════════════════════
+const DEFAULT_LISTS = {
+  tipoCredito: {
+    label: "Tipo de Crédito (NUEVAS SOLICITUDES)",
+    items: ["Línea Corriente","Línea de Sobregiro","Crédito contra cheques","Línea Básica"]
+  },
+  vendedor: {
+    label: "Vendedor (NUEVAS SOLICITUDES)",
+    items: ["JUAN BOGADO","RAUL ALONSO","MARIA GOMEZ"]
+  },
+  resolucionAnalista: {
+    label: "Resolución Analista (NUEVAS SOLICITUDES)",
+    items: ["En Análisis","Derivado a Comité","Aprobado Sin Observaciones","Aprobado con Excepción","Rechazado"]
+  },
+  obsAnalistaComite: {
+    label: "Observación del Analista (NUEVAS SOLICITUDES)",
+    items: ["SIN OBSERVACIONES","FALTA DOCUMENTACIÓN","NO CALIFICA"]
+  },
+  tipoRespuestaDoc: {
+    label: "Tipo de Respuesta Últ. Gestión (ACTUALIZACIÓN DE DOCUMENTOS)",
+    items: ["Sin Gestión","Solicitado al cliente","Solicitado al vendedor","Sin retorno","Reprogramar","Docs. Actualizados"]
+  },
+  tipoRespuestaLinea: {
+    label: "Tipo de Respuesta Últ. Gestión (LÍNEAS DE CRÉDITO)",
+    items: ["Sin Gestión","Solicitado al cliente","Solicitado al vendedor","Sin retorno","Mantiene LC Actual","Nueva LC GS.","Reprogramar"]
+  },
+  documentoTipo: {
+    label: "Documento a Actualizar (ACTUALIZACIÓN DE DOCUMENTOS)",
+    items: ["Balance General","Estados Financieros","Cédula de Identidad","RUC Actualizado","Referencias Comerciales","Constancia de Domicilio","Patente Comercial"]
+  },
+  usuarios: {
+    label: "Usuarios del Sistema (GENERAL)",
+    items: []
+  },
+  // v22: rangos {desde:'aaaa-mm-dd', hasta:'aaaa-mm-dd', tipo, detalle}. Tiene su propia tarjeta en Listas.
+  diasNoLaborables: {
+    label: "Días no laborables del analista",
+    items: [],
+    especial: true
+  }
+};
+
+// Resoluciones que cierran la solicitud: al elegir cualquiera de estas se sella fecha y hora de resolución.
+const RESOLUCIONES_ABIERTAS = ["", "En Análisis"];
+function resolucionCierra(valor) { return !RESOLUCIONES_ABIERTAS.includes(String(valor || '').trim()); }
+
+// Tipos de respuesta que dan por terminada la gestión (no cuentan como vencidas).
+const RESPUESTAS_CERRADAS = ["Docs. Actualizados", "Mantiene LC Actual", "Nueva LC GS."];
+
+// ═══════════════════════════════════════════════
+//  COMPATIBILIDAD CON LA ESTRUCTURA ANTERIOR
+//  (1) Al LEER: traduce los estados viejos a las listas nuevas, para que los
+//      registros ya cargados no queden en blanco.
+//  (2) Al GUARDAR: sigue escribiendo las columnas viejas, para que el
+//      Tablero de Indicadores de Comisiones no se rompa durante la transición.
+//  ⚠️ Quitar el punto (2) cuando el tablero se actualice a los campos nuevos.
+// ═══════════════════════════════════════════════
+
+// ── (1) LECTURA: viejo → nuevo ──
+const MAPA_TIPO_RESOLUCION = {
+  'EN PROCESO':          'En Análisis',
+  'EN REVISIÓN COMITÉ':  'Derivado a Comité',
+  'EN REVISION COMITE':  'Derivado a Comité',
+  'APROBADO':            'Aprobado Sin Observaciones',
+  'RECHAZADO':           'Rechazado'
+  // 'DESISTIDO' no tiene equivalente: queda sin resolución para que se decida a mano.
+};
+
+const MAPA_ESTADO_CARPETA = {
+  'Pendiente':   'En Análisis',
+  'En revisión': 'En Análisis',
+  'En revision': 'En Análisis'
+  // 'Procesada' y 'Devuelta' no dicen cuál fue la resolución: quedan en blanco.
+};
+
+function migrarResolucionAnalista(rec) {
+  if (rec.resolucionAnalista) return rec.resolucionAnalista;
+  const porResolucion = MAPA_TIPO_RESOLUCION[String(rec.tipoResolucion || '').trim().toUpperCase()];
+  if (porResolucion) return porResolucion;
+  return MAPA_ESTADO_CARPETA[String(rec.estadoCarpeta || '').trim()] || '';
+}
+
+const MAPA_ESTADO_DOC = {
+  'Sin Gestión': 'Sin Gestión',
+  'Sin Gestion': 'Sin Gestión',
+  'PENDIENTE':   'Solicitado al cliente',
+  'EN PROCESO':  'Solicitado al cliente',
+  'FINALIZADO':  'Docs. Actualizados'
+  // 'CANCELADO' no tiene equivalente: vuelve a "Sin Gestión".
+};
+
+// Devuelve el valor de la columna vieja "estado", conservando el original
+// mientras la fila no haya sido tipificada con la lista nueva.
+function estadoCompat(tipoRespuesta, estadoOrig, mapa) {
+  const t = String(tipoRespuesta || '').trim();
+  if (!t || t === 'Sin Gestión') return estadoOrig || 'Sin Gestión';
+  return mapa[t] || estadoOrig || 'Sin Gestión';
+}
+
+function migrarTipoRespuestaDoc(d) {
+  if (d.tipoRespuesta) return d.tipoRespuesta;
+  return MAPA_ESTADO_DOC[String(d.estado || '').trim()] || 'Sin Gestión';
+}
+
+const MAPA_ESTADO_LINEA = {
+  'Sin Gestión': 'Sin Gestión',
+  'Sin Gestion': 'Sin Gestión',
+  'PENDIENTE':   'Solicitado al cliente',
+  'EN PROCESO':  'Solicitado al cliente',
+  'MANTIENE LC': 'Mantiene LC Actual'
+};
+
+function migrarTipoRespuestaLinea(d) {
+  if (d.tipoRespuesta) return d.tipoRespuesta;
+  const estado = String(d.estado || '').trim();
+  // "FINALIZADO" se resuelve según haya o no una línea nueva cargada.
+  if (estado === 'FINALIZADO') {
+    return String(d.nuevaLinea || '').replace(/[^\d]/g, '') ? 'Nueva LC GS.' : 'Mantiene LC Actual';
+  }
+  return MAPA_ESTADO_LINEA[estado] || 'Sin Gestión';
+}
+
+// ── (2) ESCRITURA: nuevo → viejo (compatibilidad con el tablero) ──
+const MAPA_RESOLUCION_A_VIEJO = {
+  'En Análisis':                'EN PROCESO',
+  'Derivado a Comité':          'EN REVISIÓN COMITÉ',
+  'Aprobado Sin Observaciones': 'APROBADO',
+  'Aprobado con Excepción':     'APROBADO',
+  'Rechazado':                  'RECHAZADO'
+};
+
+const MAPA_RESPUESTA_DOC_A_VIEJO = {
+  'Sin Gestión':            'Sin Gestión',
+  'Solicitado al cliente':  'EN PROCESO',
+  'Solicitado al vendedor': 'EN PROCESO',
+  'Sin retorno':            'PENDIENTE',
+  'Reprogramar':            'PENDIENTE',
+  'Docs. Actualizados':     'FINALIZADO'
+};
+
+const MAPA_RESPUESTA_LINEA_A_VIEJO = {
+  'Sin Gestión':            'Sin Gestión',
+  'Solicitado al cliente':  'EN PROCESO',
+  'Solicitado al vendedor': 'EN PROCESO',
+  'Sin retorno':            'PENDIENTE',
+  'Reprogramar':            'PENDIENTE',
+  'Mantiene LC Actual':     'MANTIENE LC',
+  'Nueva LC GS.':           'FINALIZADO'
+};
+
+// Reconstruye el timestamp ISO que usaba la versión anterior, a partir de fecha + hora.
+// `origISO` es el timestamp que ya estaba en la planilla: si la hora no se puede
+// reconstruir, se conserva el original en lugar de escribir medianoche.
+function isoDesdeFechaHora(fechaTexto, horaTexto, origISO) {
+  const hhmm = normalizarHora(horaTexto);
+  if (!hhmm && origISO) {
+    const o = new Date(origISO);
+    if (!isNaN(o)) return o.toISOString();
+  }
+  const d = combinarFechaHora(fechaTexto, horaTexto);
+  return d ? d.toISOString() : (origISO || null);
+}
+
+// Campos de la hoja Carpetas que se siguen escribiendo solo para el tablero.
+function estadoCarpetaCompat(c) {
+  const resol = c.resolucionAnalista || '';
+  const orig = c._estadoCarpetaOrig || '';
+  if (!resol) return orig || 'Pendiente';
+  if (resol === 'Derivado a Comité') return 'En revisión';
+  if (resol === 'En Análisis') return (orig && orig !== 'Procesada') ? orig : 'En revisión';
+  return 'Procesada'; // aprobadas y rechazadas
+}
+
+function camposCompatCarpeta(c) {
+  const resol = c.resolucionAnalista || '';
+  // Si la resolución nueva está vacía (p. ej. "DESISTIDO", que no tiene equivalente),
+  // se conserva el valor viejo original en lugar de borrarlo.
+  const tipoResolucion = MAPA_RESOLUCION_A_VIEJO[resol] || c._tipoResolucionOrig || '';
+  return {
+    fechaAsig:      c.fechaIngresoDocs || '',
+    estadoCarpeta:  estadoCarpetaCompat(c),
+    tipoResolucion: tipoResolucion,
+    ingresoTimestamp: isoDesdeFechaHora(c.fechaIngresoDocs, c.horaIngresoDocs, c._ingresoTimestampOrig),
+    resolTimestamp:   isoDesdeFechaHora(c.fechaResolucion, c.horaResolucion, c._resolTimestampOrig)
+  };
+}
+
+let LISTS = {};
+
+async function loadLists() {
+  LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS)); // base con las etiquetas/listas actuales del código
+  try {
+    const filas = await apiListar('Listas');
+    if (filas !== null) registrarHuella('Listas', filas);
+    if (filas === null) {
+      avisarFalloConexion('Listas');
+      cargarListsDesdeLocalStorage();
+      return;
+    }
+    if (filas && filas.length) {
+      filas.forEach(f => {
+        if (LISTS[f.clave]) {
+          try {
+            const items = JSON.parse(f.itemsJSON);
+            if (Array.isArray(items)) LISTS[f.clave].items = items;
+          } catch(e) { /* fila corrupta: se ignora, queda el default */ }
+        }
+      });
+    } else {
+      // La hoja "Listas" todavía está vacía (primera vez): usar lo que haya en este navegador como semilla
+      cargarListsDesdeLocalStorage();
+    }
+  } catch(e) {
+    cargarListsDesdeLocalStorage();
+  }
+}
+
+// Respaldo/semilla: solo se usa si falló la conexión o si la hoja "Listas" en Sheets está vacía.
+function cargarListsDesdeLocalStorage() {
+  try {
+    const saved = localStorage.getItem('varzan_listas');
+    if (!saved) return;
+    const local = JSON.parse(saved);
+    for (const k in DEFAULT_LISTS) {
+      if (local[k] && Array.isArray(local[k].items)) {
+        LISTS[k].items = local[k].items;
+      }
+    }
+  } catch(e) { /* keep defaults */ }
+}
+
+async function saveLists() {
+  // collect from rendered UI
+  for (const key in LISTS) {
+    const ul = document.querySelector(`#list-ul-${key}`);
+    if (!ul) continue;
+    const lis = ul.querySelectorAll('li');
+    LISTS[key].items = Array.from(lis).map(li => li.dataset.val);
+  }
+  localStorage.setItem('varzan_listas', JSON.stringify(LISTS)); // respaldo local (no reemplaza a Sheets)
+
+  const filas = Object.keys(LISTS).map(key => ({
+    clave: key,
+    itemsJSON: JSON.stringify(LISTS[key].items)
+  }));
+  // v22: se conservan las filas de claves que este código no administra (por ejemplo,
+  // listas viejas) en lugar de borrarlas, y se usa la guarda de concurrencia.
+  const actuales = await apiListar('Listas');
+  if (actuales !== null) {
+    actuales.forEach(f => {
+      if (f && f.clave && !LISTS[f.clave]) filas.push({ clave: f.clave, itemsJSON: f.itemsJSON || '' });
+    });
+  }
+  const r = (actuales === null) ? { ok: false } : await apiGuardarSiNoCambio('Listas', filas);
+  if (!r.ok && !r.desfase) avisarFalloConexion('Listas (guardado)');
+
+  // refresh all selects in tables
+  refreshAllSelects();
+  if (typeof renderDocTable === 'function') renderDocTable();
+  const msg = document.getElementById('save-ok-msg');
+  if (r.ok) {
+    msg.textContent = '✔ Guardado correctamente (visible para todo el equipo)';
+    msg.style.color = '';
+  } else {
+    msg.textContent = '❌ No se pudo guardar en la planilla compartida. Revisá tu conexión e intentá de nuevo.';
+    msg.style.color = '#C62828';
+  }
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display='none', 3500);
+}
+
+function renderListasUI() {
+  const grid = document.getElementById('listas-grid');
+  grid.innerHTML = '';
+  for (const key in LISTS) {
+    const lst = LISTS[key];
+    if (lst.especial) continue; // tiene su propia tarjeta
+    const card = document.createElement('div');
+    card.className = 'dropdown-card';
+    card.innerHTML = `
+      <h4>${lst.label}</h4>
+      <ul id="list-ul-${key}">
+        ${lst.items.map(it => `<li data-val="${it}">${it} <button class="drop-del" onclick="deleteListItem(this)" title="Eliminar">×</button></li>`).join('')}
+      </ul>
+      <div class="add-item-row">
+        <input type="text" id="new-item-${key}" placeholder="Nueva opción...">
+        <button class="btn-add-item" onclick="addListItem('${key}')">+ Agregar</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+  renderDiasNoLaborablesUI();
+}
+
+function addListItem(key) {
+  const inp = document.getElementById(`new-item-${key}`);
+  const val = inp.value.trim();
+  if (!val) return;
+  if (LISTS[key].items.includes(val)) { inp.value=''; return; }
+  LISTS[key].items.push(val);
+  inp.value = '';
+  renderListasUI();
+}
+
+function deleteListItem(btn) {
+  const li = btn.parentElement;
+  const ul = li.parentElement;
+  ul.removeChild(li);
+}
+
+function getListOptions(key) {
+  return LISTS[key] ? LISTS[key].items : [];
+}
+
+function makeSelect(key, onchangeFn, extraClass) {
+  const opts = getListOptions(key);
+  const sel = document.createElement('select');
+  sel.className = 'cell-select' + (extraClass ? ' ' + extraClass : '');
+  sel.dataset.listKey = key;
+  const blank = document.createElement('option');
+  blank.value = ''; blank.textContent = '— Seleccionar —';
+  sel.appendChild(blank);
+  opts.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    sel.appendChild(opt);
+  });
+  if (onchangeFn) sel.addEventListener('change', onchangeFn);
+  return sel;
+}
+
+function refreshAllSelects() {
+  document.querySelectorAll('select[data-list-key]').forEach(sel => {
+    const key = sel.dataset.listKey;
+    const current = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    getListOptions(key).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o; opt.textContent = o;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function fmtDate(d) {
+  if (!d) return '';
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+function fmtTime(d) {
+  if (!d) return '';
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtMonth(d) {
+  if (!d) return '';
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return `${meses[d.getMonth()]} ${d.getFullYear()}`;
+}
+function formatMiles(valor) {
+  const digits = String(valor === null || valor === undefined ? '' : valor).replace(/[^\d]/g, '');
+  if (!digits) return '';
+  return Number(digits).toLocaleString('es-PY');
+}
+function onMontoFieldInput(inp) {
+  const digits = inp.value.replace(/[^\d]/g, '');
+  inp.value = digits ? Number(digits).toLocaleString('es-PY') : '';
+}
+// ═══════════════════════════════════════════════
+//  NORMALIZADORES DE FECHA Y HORA  (v19)
+//  Google Sheets puede convertir solo las columnas de fecha/hora de texto
+//  a valores de fecha reales. Cuando eso pasa, la API las devuelve como ISO
+//  (una fecha como "2026-07-17T08:00:00.000Z" y una hora suelta anclada al
+//  30/12/1899). Estas funciones aceptan los dos formatos para que el dato
+//  no se degrade en cada guardado.
+// ═══════════════════════════════════════════════
+
+// true si el valor es una hora suelta convertida por Sheets (epoch 1899/1900).
+function esHoraSerializada(v) {
+  return /^(1899|1900)-\d{2}-\d{2}T/.test(String(v || ''));
+}
+
+// Desfasaje, en minutos, de la zona horaria del proyecto de Apps Script en el
+// epoch 1899-12-30 (America/Los_Angeles = -8 h, que es el valor por defecto de
+// un proyecto de Apps Script). Cuando Sheets convierte una columna de hora de
+// texto a valor de hora, la API la devuelve anclada a 1899-12-30 con este
+// desfasaje ya aplicado; restándolo se recupera la hora original exacta.
+// Verificado contra 10 horas conocidas del respaldo del 23/09: coinciden las 10.
+const OFFSET_EPOCH_SHEETS_MIN = -480;
+
+// Recupera HH:MM de una hora que Sheets convirtió a valor de fecha-hora.
+// Devuelve '' si el valor no tiene esa forma.
+function horaDesdeSerializada(v) {
+  const str = String(v || '').trim();
+  if (!esHoraSerializada(str)) return '';
+  const d = new Date(str);
+  if (isNaN(d)) return '';
+  const base = Date.UTC(1899, 11, 30, 0, 0, 0, 0);
+  let min = Math.round((d.getTime() - base) / 60000) + OFFSET_EPOCH_SHEETS_MIN;
+  min = ((min % 1440) + 1440) % 1440; // normaliza al rango de un día
+  const h = Math.floor(min / 60), mi = min % 60;
+  return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+}
+
+// Devuelve dd/mm/aaaa, o '' si no se puede interpretar con seguridad.
+function normalizarFecha(v) {
+  if (!v) return '';
+  if (v instanceof Date) return isNaN(v) ? '' : fmtDate(v);
+  const str = String(v).trim();
+  if (!str) return '';
+  // Ya está en el formato que usa la herramienta.
+  let m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return fmtDate(new Date(+m[3], +m[2]-1, +m[1]));
+  // Una hora suelta no es una fecha.
+  if (esHoraSerializada(str)) return '';
+  // ISO: se leen los componentes del texto, sin conversión de zona horaria.
+  m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return fmtDate(new Date(+m[1], +m[2]-1, +m[3]));
+  const d = new Date(str);
+  return isNaN(d) ? '' : fmtDate(d);
+}
+
+// Devuelve HH:MM, o '' si el valor no es una hora interpretable.
+// Acepta texto ("15:08", "15:08:00") y también el valor de hora que devuelve
+// Sheets cuando convirtió la columna (anclado a 1899-12-30), del que recupera
+// la hora original restando el desfasaje del epoch.
+function normalizarHora(v) {
+  if (v instanceof Date) return '';
+  const str = String(v || '').trim();
+  if (!str) return '';
+  const m = str.match(/^(\d{1,2}):(\d{2})/);
+  if (m) {
+    const h = +m[1], min = +m[2];
+    if (h > 23 || min > 59) return '';
+    return String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+  }
+  // Hora convertida por Sheets: se recupera con el desfasaje del epoch.
+  return horaDesdeSerializada(str);
+}
+
+function parseDateInput(str) {
+  if (!str) return null;
+  if (str instanceof Date) return isNaN(str) ? null : str;
+  const txt = String(str);
+  const m = txt.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  if (esHoraSerializada(txt)) return null;
+  const iso = txt.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(+iso[1], +iso[2]-1, +iso[3]);
+  const d = new Date(txt);
+  return isNaN(d) ? null : d;
+}
+
+// ═══════════════════════════════════════════════
+//  1. NUEVAS SOLICITUDES  (hoja Carpetas)
+//  carpetasData es la única fuente de verdad: la tabla se dibuja desde el array
+//  y el guardado se arma desde el array, nunca desde el DOM. Así ningún filtro
+//  puede hacer desaparecer registros al guardar.
+// ═══════════════════════════════════════════════
+let carpetasData = [];
+
+function nuevaCarpetaVacia(ahora) {
+  return {
+    fechaIngresoDocs: fmtDate(ahora),
+    horaIngresoDocs: fmtTime(ahora),
+    codigoCliente: '',
+    nroDocumento: '',
+    cliente: '',
+    nroSolicitud: '',
+    vendedor: '',
+    tipoCredito: '',
+    fechaAnalisis: '',
+    fechaResolucion: '',
+    horaResolucion: '',
+    resolucionAnalista: '',
+    obsAnalistaComite: '',
+    comentarios: [],
+    mes: fmtMonth(ahora)
+  };
+}
+
+let _addingCarpetaRow = false;
+async function addCarpetaRow() {
+  if (_addingCarpetaRow) return; // evita doble fila por doble clic accidental
+  _addingCarpetaRow = true;
+  setTimeout(() => { _addingCarpetaRow = false; }, 500);
+
+  const ahora = new Date();
+  carpetasData.push(nuevaCarpetaVacia(ahora));
+
+  // Si hay filtros puestos, la fila nueva podría quedar oculta: se limpian para que se vea.
+  ['carp-search','carp-desde','carp-hasta'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+
+  renderCarpetasTable();
+  const tr = document.querySelector(`#tbody-carpetas tr[data-idx="${carpetasData.length - 1}"]`);
+  if (tr) {
+    tr.scrollIntoView({ block: 'nearest' });
+    const inp = tr.querySelector('input[data-field="codigoCliente"]');
+    if (inp) inp.focus();
+  }
+  autoguardarCarpetas();
+}
+
+function carpetaRowEsValida(rec) {
+  return !!(rec.fechaIngresoDocs && String(rec.fechaIngresoDocs).trim()) &&
+         !!(rec.codigoCliente && String(rec.codigoCliente).trim()) &&
+         !!(rec.nroDocumento && String(rec.nroDocumento).trim()) &&
+         !!(rec.cliente && String(rec.cliente).trim());
+}
+
+function serializeCarpetas() {
+  return carpetasData.map((c, idx) => {
+    const d = parseDateInput(c.fechaIngresoDocs);
+    return {
+      idx,
+      fechaIngresoDocs: c.fechaIngresoDocs || '',
+      horaIngresoDocs: c.horaIngresoDocs || '',
+      codigoCliente: c.codigoCliente || '',
+      nroDocumento: c.nroDocumento || '',
+      cliente: c.cliente || '',
+      nroSolicitud: c.nroSolicitud || '',
+      vendedor: c.vendedor || '',
+      tipoCredito: c.tipoCredito || '',
+      fechaAnalisis: c.fechaAnalisis || '',
+      fechaResolucion: c.fechaResolucion || '',
+      horaResolucion: c.horaResolucion || '',
+      resolucionAnalista: c.resolucionAnalista || '',
+      obsAnalistaComite: c.obsAnalistaComite || '',
+      mes: d ? fmtMonth(d) : (c.mes || ''),
+      comentariosJSON: JSON.stringify(c.comentarios || []),
+      // columnas viejas, solo para que el tablero de comisiones siga calculando
+      ...camposCompatCarpeta(c)
+    };
+  });
+}
+
+async function saveCarpetasToStorage() {
+  const records = serializeCarpetas();
+  const recordsCompletos = records.filter(carpetaRowEsValida);
+
+  const r = await apiGuardarSiNoCambio('Carpetas', recordsCompletos);
+  if (r && r.desfase) return { incompletas: 0, ok: false, desfase: true };
+  if (!r.ok) avisarFalloConexion('Nuevas Solicitudes (guardado)');
+
+  // Copia de consulta directa en la hoja Tiempos (mismos datos, campos de esa vista)
+  const tiemposRecords = recordsCompletos.map(rec => ({
+    idx: rec.idx,
+    fechaIngresoDocs: rec.fechaIngresoDocs,
+    horaIngresoDocs: rec.horaIngresoDocs,
+    codigoCliente: rec.codigoCliente,
+    nroDocumento: rec.nroDocumento,
+    cliente: rec.cliente,
+    nroSolicitud: rec.nroSolicitud,
+    vendedor: rec.vendedor,
+    tipoCredito: rec.tipoCredito,
+    resolucionAnalista: rec.resolucionAnalista,
+    fechaResolucion: rec.fechaResolucion,
+    horaResolucion: rec.horaResolucion,
+    mes: rec.mes,
+    // columna vieja, solo por compatibilidad
+    fechaAsig: rec.fechaAsig || rec.fechaIngresoDocs
+  }));
+  // Tiempos es una copia derivada de Carpetas: solo se reescribe si Carpetas se guardó.
+  const rT = await apiReemplazarTodo('Tiempos', tiemposRecords);
+  if (!rT.ok) avisarFalloConexion('Tiempos de Respuesta (guardado)');
+  else { const t = await apiListar('Tiempos'); if (t !== null) registrarHuella('Tiempos', t); }
+
+  return {
+    incompletas: records.length - recordsCompletos.length,
+    ok: !!(r && r.ok && rT && rT.ok)
+  };
+}
+
+async function loadCarpetasFromStorage() {
+  try {
+    const records = await apiListar('Carpetas');
+    if (records !== null) registrarHuella('Carpetas', records);
+    if (records === null) { avisarFalloConexion('Nuevas Solicitudes'); return; }
+    carpetasData = (records || []).map(rec => {
+      let comentarios = [];
+      try { comentarios = rec.comentariosJSON ? JSON.parse(rec.comentariosJSON) : []; } catch(e) { comentarios = []; }
+      // Compatibilidad con la estructura anterior: fechaAsig / ingresoTimestamp / resolTimestamp.
+      const ing = rec.ingresoTimestamp ? new Date(rec.ingresoTimestamp) : null;
+      const res = rec.resolTimestamp ? new Date(rec.resolTimestamp) : null;
+      const ingOK = ing && !isNaN(ing);
+      const resOK = res && !isNaN(res);
+      // Si Sheets convirtió la columna de hora, normalizarHora devuelve '' y se
+      // usa el timestamp ISO como respaldo, que sí conserva la hora real.
+      return {
+        fechaIngresoDocs: normalizarFecha(rec.fechaIngresoDocs) || normalizarFecha(rec.fechaAsig) || (ingOK ? fmtDate(ing) : ''),
+        horaIngresoDocs:  normalizarHora(rec.horaIngresoDocs) || (ingOK ? fmtTime(ing) : ''),
+        codigoCliente: rec.codigoCliente || '',
+        nroDocumento:  rec.nroDocumento || '',
+        cliente:       rec.cliente || '',
+        nroSolicitud:  rec.nroSolicitud || '',
+        vendedor:      rec.vendedor || '',
+        tipoCredito:   rec.tipoCredito || '',
+        fechaAnalisis: normalizarFecha(rec.fechaAnalisis),
+        fechaResolucion: normalizarFecha(rec.fechaResolucion) || (resOK ? fmtDate(res) : ''),
+        horaResolucion:  normalizarHora(rec.horaResolucion) || (resOK ? fmtTime(res) : ''),
+        resolucionAnalista: migrarResolucionAnalista(rec),
+        obsAnalistaComite: rec.obsAnalistaComite || '',
+        _tipoResolucionOrig: rec.tipoResolucion || '',
+        _estadoCarpetaOrig:  rec.estadoCarpeta || '',
+        _ingresoTimestampOrig:  ingOK ? ing.toISOString() : '',
+        _resolTimestampOrig:    resOK ? res.toISOString() : '',
+        comentarios,
+        mes: rec.mes || ''
+      };
+    });
+    renderCarpetasTable();
+  } catch(e) {
+    console.error('Error al cargar Nuevas Solicitudes / Tiempos', e);
+    const banner = document.getElementById('error-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.textContent = `⚠️ Error al mostrar Nuevas Solicitudes: ${e && e.message ? e.message : e}. Abrí la consola del navegador (F12) para más detalle.`;
+    }
+  }
+}
+
+// Índices de carpetasData que pasan búsqueda + rango de Fecha Ingreso Docs.
+function carpetasIndicesFiltrados() {
+  const term = valorDe('carp-search').trim().toLowerCase();
+  const desde = valorDe('carp-desde');
+  const hasta = valorDe('carp-hasta');
+  return carpetasData.map((c, idx) => idx).filter(idx => {
+    const c = carpetasData[idx];
+    if (term && !(String(c.codigoCliente||'').toLowerCase().includes(term) ||
+                  String(c.cliente||'').toLowerCase().includes(term) ||
+                  String(c.nroSolicitud||'').toLowerCase().includes(term))) return false;
+    if (!enRango(c.fechaIngresoDocs, desde, hasta)) return false;
+    return true;
+  });
+}
+
+function limpiarFiltrosCarpetas() {
+  ['carp-search','carp-desde','carp-hasta'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  renderCarpetasTable();
+}
+
+function renderCarpetasTable() {
+  const tbody = document.getElementById('tbody-carpetas');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!carpetasData.length) {
+    tbody.innerHTML = '<tr id="carp-empty"><td colspan="13" class="empty" style="text-align:center;padding:20px;">✏️ Sin registros. Presione "+ Agregar fila" para comenzar.</td></tr>';
+    actualizarContadorFiltro('carp-count', 0, 0);
+    renderTiemposTable();
+    return;
+  }
+
+  const indices = carpetasIndicesFiltrados();
+  if (!indices.length) {
+    tbody.innerHTML = '<tr><td colspan="13" class="empty" style="text-align:center;padding:20px;">🔎 Ninguna solicitud coincide con el filtro.</td></tr>';
+    actualizarContadorFiltro('carp-count', 0, carpetasData.length);
+    renderTiemposTable();
+    return;
+  }
+
+  indices.forEach(idx => {
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    tr.innerHTML = buildCarpetaRowHTML(carpetasData[idx], idx);
+    tbody.appendChild(tr);
+    bindCarpetaRowEvents(tr, idx);
+  });
+  actualizarContadorFiltro('carp-count', indices.length, carpetasData.length);
+  renderTiemposTable();
+}
+
+function buildCarpetaRowHTML(c, idx) {
+  const esc = v => String(v === undefined || v === null ? '' : v).replace(/"/g, '&quot;');
+  return `
+    <td class="auto center">${idx+1}</td>
+    <td>${celdaFecha(c.fechaIngresoDocs, 'fechaIngresoDocs', 'onCarpetaFieldChange')}</td>
+    <td><input class="cell-input" type="text" value="${esc(c.codigoCliente)}" placeholder="Código Cliente" data-field="codigoCliente" oninput="onCarpetaFieldChange(this)"></td>
+    <td><input class="cell-input" type="text" value="${esc(c.nroDocumento)}" placeholder="Nro. Documento (CI/RUC)" data-field="nroDocumento" oninput="onCarpetaFieldChange(this)"></td>
+    <td><input class="cell-input" type="text" value="${esc(c.cliente)}" placeholder="Cliente o Razón Social" data-field="cliente" oninput="onCarpetaFieldChange(this)"></td>
+    <td><input class="cell-input" type="text" value="${esc(c.nroSolicitud)}" placeholder="N° Solicitud" data-field="nroSolicitud" oninput="onCarpetaFieldChange(this)"></td>
+    <td class="td-select-vendedor"></td>
+    <td class="td-select-tipo"></td>
+    <td>${celdaFecha(c.fechaAnalisis, 'fechaAnalisis', 'onCarpetaFieldChange')}</td>
+    <td>${celdaFecha(c.fechaResolucion, 'fechaResolucion', 'onCarpetaFieldChange')}</td>
+    <td class="td-select-resolucion"></td>
+    <td class="td-select-obs"></td>
+    <td class="comment-cell">${buildIconCellHTML('carpetas', idx)}</td>
+    <td class="th-center" style="text-align:center;"><button type="button" class="icon-btn icon-del" title="Eliminar registro" onclick="eliminarCarpetaRow(${idx})">🗑️</button></td>
+  `;
+}
+
+function bindCarpetaRowEvents(tr, idx) {
+  const tdVendedor = tr.querySelector('.td-select-vendedor');
+  const selVendedor = makeSelect('vendedor', function() {
+    carpetasData[idx].vendedor = this.value;
+    autoguardarCarpetas();
+    renderTiemposTable();
+  });
+  selVendedor.value = carpetasData[idx].vendedor || '';
+  tdVendedor.appendChild(selVendedor);
+
+  const tdTipo = tr.querySelector('.td-select-tipo');
+  const selTipo = makeSelect('tipoCredito', function() {
+    carpetasData[idx].tipoCredito = this.value;
+    autoguardarCarpetas();
+    renderTiemposTable();
+  });
+  selTipo.value = carpetasData[idx].tipoCredito || '';
+  tdTipo.appendChild(selTipo);
+
+  // Resolución Analista: cualquier valor distinto de "En Análisis" sella fecha y hora de resolución.
+  const tdResol = tr.querySelector('.td-select-resolucion');
+  const selResol = makeSelect('resolucionAnalista', function() {
+    const valor = this.value;
+    carpetasData[idx].resolucionAnalista = valor;
+    if (resolucionCierra(valor)) {
+      if (!carpetasData[idx].fechaResolucion || !carpetasData[idx].horaResolucion) {
+        const ahora = new Date();
+        carpetasData[idx].fechaResolucion = fmtDate(ahora);
+        carpetasData[idx].horaResolucion  = fmtTime(ahora);
+        const inpFR = tr.querySelector('input[data-field="fechaResolucion"]');
+        if (inpFR) inpFR.value = carpetasData[idx].fechaResolucion;
+      }
+    } else {
+      // Vuelve a "En Análisis" (o queda en blanco): se libera la resolución.
+      carpetasData[idx].fechaResolucion = '';
+      carpetasData[idx].horaResolucion = '';
+      const inpFR = tr.querySelector('input[data-field="fechaResolucion"]');
+      if (inpFR) inpFR.value = '';
+    }
+    autoguardarCarpetas();
+    renderTiemposTable();
+  });
+  selResol.value = carpetasData[idx].resolucionAnalista || '';
+  tdResol.appendChild(selResol);
+
+  // Observación del Analista: es lo que el analista encontró al revisar la carpeta.
+  // Junto con la resolución define el indicador 1 del tablero de comisiones
+  // (la resolución tiene que ser coherente con la observación registrada).
+  const tdObs = tr.querySelector('.td-select-obs');
+  const selObs = makeSelect('obsAnalistaComite', function() {
+    carpetasData[idx].obsAnalistaComite = this.value;
+    autoguardarCarpetas();
+  });
+  selObs.value = carpetasData[idx].obsAnalistaComite || '';
+  tdObs.appendChild(selObs);
+}
+
+function onCarpetaFieldChange(inp) {
+  const tr = inp.closest('tr');
+  const idx = +tr.dataset.idx;
+  if (!carpetasData[idx]) return;
+  const campo = inp.dataset.field;
+  carpetasData[idx][campo] = (inp.type === 'date') ? fechaDesdeInput(inp) : inp.value;
+  if (campo === 'fechaIngresoDocs') {
+    const d = parseDateInput(carpetasData[idx].fechaIngresoDocs);
+    if (d) carpetasData[idx].mes = fmtMonth(d);
+  }
+  renderTiemposTable();
+  autoguardarCarpetas();
+}
+
+// Autoguardado de la pestaña 1 (agrupa los cambios rápidos en un solo envío).
+function autoguardarCarpetas() {
+  programarGuardado('carpetas', saveCarpetasToStorage, 'carp-guardar-status');
+}
+
+async function eliminarCarpetaRow(idx) {
+  const c = carpetasData[idx];
+  if (!c) return;
+  const quien = c.cliente ? ` de "${c.cliente}"` : '';
+  if (!confirm(`¿Eliminar la solicitud${quien} (y su registro en Tiempos de Respuesta)? Esta acción no se puede deshacer.`)) return;
+  carpetasData.splice(idx, 1);
+  renderCarpetasTable();
+  mostrarEstadoGuardado('carp-guardar-status', 'guardando');
+  const resultado = await saveCarpetasToStorage();
+  if (!resultado.ok) {
+    mostrarEstadoGuardado('carp-guardar-status', 'error');
+    alert('⚠️ El registro se quitó de la pantalla, pero no se pudo confirmar el guardado en la planilla compartida (falló la conexión). Presioná "🔄 Reintentar ahora"; si no se guarda, el registro puede volver a aparecer al recargar la página.');
+  } else {
+    mostrarEstadoGuardado('carp-guardar-status', 'guardado');
+  }
+}
+
+// Reintento inmediato (botón que solo aparece cuando falló un autoguardado).
+async function guardarCarpetasManual() {
+  mostrarEstadoGuardado('carp-guardar-status', 'guardando');
+  const r = await saveCarpetasToStorage();
+  if (!r.ok) {
+    mostrarEstadoGuardado('carp-guardar-status', 'error');
+  } else {
+    mostrarEstadoGuardado('carp-guardar-status', 'guardado',
+      r.incompletas ? `⚠️ ${r.incompletas} fila(s) sin campos obligatorios no se guardaron` : '');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  2. TIEMPOS DE RESPUESTA  (vista de solo lectura de Nuevas Solicitudes)
+// ═══════════════════════════════════════════════
+function renderTiemposTable() {
+  const tbody = document.getElementById('tbody-tiempos');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!carpetasData.length) {
+    tbody.innerHTML = '<tr id="tiem-empty"><td colspan="11" class="empty" style="text-align:center;padding:20px;">⚡ Los registros se generan automáticamente al agregar filas en Nuevas Solicitudes.</td></tr>';
+    actualizarContadorFiltro('tiem-count', 0, 0);
+    return;
+  }
+
+  carpetasData.forEach((c, idx) => {
+    const tr = document.createElement('tr');
+    tr.id = 'tiem-row-' + idx;
+    tr.dataset.idx = idx;
+    tr.innerHTML = `
+      <td class="auto center">${idx+1}</td>
+      <td class="cell-auto">${c.fechaIngresoDocs || ''}</td>
+      <td class="cell-auto">${c.horaIngresoDocs || ''}</td>
+      <td class="cell-auto">${c.codigoCliente || ''}</td>
+      <td class="cell-auto">${c.nroDocumento || ''}</td>
+      <td class="cell-auto" style="text-align:left;">${c.cliente || ''}</td>
+      <td class="cell-auto">${c.nroSolicitud || ''}</td>
+      <td class="cell-auto">${c.vendedor || ''}</td>
+      <td class="cell-auto">${c.tipoCredito || ''}</td>
+      <td class="cell-auto">${c.fechaResolucion || '—'}</td>
+      <td class="cell-auto">${c.horaResolucion || '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  actualizarContadorFiltro('tiem-count', carpetasData.length, carpetasData.length);
+}
+
+// ═══════════════════════════════════════════════
+//  PARÁMETROS GENERALES
+// ═══════════════════════════════════════════════
+let PARAMS = { minClientes: 30, claveAcceso: '#12345' };
+
+async function loadParams() {
+  try {
+    const filas = await apiListar('Parametros');
+    if (filas !== null) registrarHuella('Parametros', filas);
+    if (filas === null) { avisarFalloConexion('Parametros'); }
+    else {
+      const filaMin = (filas || []).find(f => f.clave === 'minClientes');
+      if (filaMin) PARAMS.minClientes = parseInt(filaMin.valor, 10) || 30;
+      const filaClave = (filas || []).find(f => f.clave === 'claveAcceso');
+      if (filaClave && filaClave.valor) PARAMS.claveAcceso = filaClave.valor;
+    }
+  } catch(e) { /* keep defaults */ }
+  const inp = document.getElementById('param-min-clientes');
+  if (inp) inp.value = PARAMS.minClientes;
+}
+
+// v22: antes se reescribía la hoja solo con estas dos claves y se borraba la
+// configuración del tablero (configIndicadoresComisiones). Ahora se leen todas las
+// filas y se conservan las claves que el CRM no administra.
+async function guardarParametrosEnSheet() {
+  const actuales = await apiListar('Parametros');
+  if (actuales === null) { avisarFalloConexion('Parametros (lectura previa al guardado)'); return false; }
+  const propias = ['minClientes', 'claveAcceso'];
+  const otras = actuales
+    .filter(f => f && f.clave && !propias.includes(f.clave))
+    .map(f => ({ clave: f.clave, valor: f.valor }));
+  const r = await apiReemplazarTodo('Parametros', [
+    { clave: 'minClientes', valor: String(PARAMS.minClientes) },
+    { clave: 'claveAcceso', valor: PARAMS.claveAcceso },
+    ...otras
+  ]);
+  if (!r.ok) avisarFalloConexion('Parametros (guardado)');
+  return r.ok;
+}
+
+async function saveParams() {
+  const inp = document.getElementById('param-min-clientes');
+  const val = parseInt(inp.value, 10);
+  PARAMS.minClientes = (val && val > 0) ? val : 30;
+  inp.value = PARAMS.minClientes;
+  const ok = await guardarParametrosEnSheet();
+  const msg = document.getElementById('save-ok-params');
+  msg.textContent = ok ? '✔ Guardado correctamente' : '❌ No se pudo guardar. Revisá tu conexión.';
+  msg.style.color = ok ? '' : '#C62828';
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display = 'none', 2500);
+}
+
+// ── Acceso protegido por contraseña: usado por "Cargar Base" y "Listas" ──
+// Comparten la misma contraseña (PARAMS.claveAcceso). La inicial es "#12345";
+// la primera vez que se usa correctamente, se exige cambiarla.
+async function solicitarAccesoYEjecutar(callback) {
+  const clave = window.prompt('🔒 Ingresá la contraseña de acceso:');
+  if (clave === null) return; // cancelado
+  if (clave !== PARAMS.claveAcceso) {
+    alert('❌ Contraseña incorrecta.');
+    return;
+  }
+  if (PARAMS.claveAcceso === '#12345') {
+    let nueva = null;
+    while (true) {
+      nueva = window.prompt('Esta es la contraseña inicial. Por seguridad, ingresá una nueva contraseña de acceso (se usará tanto para "Cargar Base" como para "Listas"):');
+      if (nueva === null) { alert('Debés establecer una nueva contraseña para continuar.'); return; }
+      nueva = nueva.trim();
+      if (nueva.length < 4) { alert('La contraseña debe tener al menos 4 caracteres.'); continue; }
+      break;
+    }
+    const confirmacion = window.prompt('Repetí la nueva contraseña para confirmar:');
+    if (confirmacion === null || confirmacion.trim() !== nueva) {
+      alert('❌ Las contraseñas no coinciden. Operación cancelada.');
+      return;
+    }
+    PARAMS.claveAcceso = nueva;
+    const ok = await guardarParametrosEnSheet();
+    if (ok) alert('✔ Contraseña actualizada correctamente. A partir de ahora usá la nueva contraseña.');
+  }
+  callback();
+}
+
+// ═══════════════════════════════════════════════
+//  DOCUMENTACIÓN CLIENTES — Base mensual de clientes
+// ═══════════════════════════════════════════════
+let docClients = []; // {codigoCliente,nroDocumento,nombreCliente,tipoCliente,documentoActualizar,fechaProgramada:Date|null,fechaGestion,tipoRespuesta,proximaGestion,comentarios,mes}
+// Nota: tipoCliente y mes se conservan en el modelo (compatibilidad con la carga y la planilla),
+// pero ya no se muestran como columnas en la tabla. documentoActualizar puede contener varios
+// documentos marcados desde el checklist de LISTAS, separados por "; ".
+let clientesBase = []; // directorio único de clientes de la base cargada (1 por cliente), usado para agregar documentos y para Líneas de Crédito
+
+async function loadClientesBaseFromStorage() {
+  const datos = await apiListar('ClientesBase');
+  if (datos !== null) registrarHuella('ClientesBase', datos);
+  if (datos === null) { avisarFalloConexion('ClientesBase'); clientesBase = []; return; }
+  clientesBase = datos.map(d => ({
+    codigoCliente: d.codigoCliente || '',
+    nroDocumento: d.nroDocumento || '',
+    nombreCliente: d.nombreCliente || '',
+    tipoCliente: d.tipoCliente || '',
+    fechaProgramada: d.fechaProgramada || null
+  }));
+}
+async function saveClientesBaseToStorage() {
+  const r = await apiGuardarSiNoCambio('ClientesBase', clientesBase);
+  if (!r.ok) avisarFalloConexion('ClientesBase (guardado)');
+}
+
+async function loadDocClientsFromStorage() {
+  const datos = await apiListar('DocClients');
+  if (datos !== null) registrarHuella('DocClients', datos);
+  if (datos === null) { avisarFalloConexion('Actualización de Documentos'); docClients = []; return; }
+  docClients = datos.map(d => {
+    let comentarios = [];
+    try { comentarios = d.comentariosJSON ? JSON.parse(d.comentariosJSON) : []; } catch(e) { comentarios = []; }
+    return {
+      codigoCliente: d.codigoCliente || '',
+      nroDocumento: d.nroDocumento || '',
+      nombreCliente: d.nombreCliente || '',
+      tipoCliente: d.tipoCliente || '',
+      documentoActualizar: d.documentoActualizar || '',
+      fechaProgramada: d.fechaProgramada ? new Date(d.fechaProgramada) : null,
+      fechaGestion: normalizarFecha(d.fechaGestion),
+      // Compatibilidad: antes este campo se llamaba "estado" con otra lista de valores.
+      tipoRespuesta: migrarTipoRespuestaDoc(d),
+      _estadoOrig: d.estado || '',
+      proximaGestion: normalizarFecha(d.proximaGestion),
+      comentarios,
+      mes: d.mes || ''
+    };
+  });
+}
+
+function docSelectedArr(c) {
+  return String(c.documentoActualizar || '').split(';').map(s => s.trim()).filter(Boolean);
+}
+
+function limpiarFiltrosDoc() {
+  ['doc-search','doc-prog-desde','doc-prog-hasta','doc-prox-desde','doc-prox-hasta'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  docPendFiltro = '';
+  docAsigFiltro = 'asignados';
+  renderDocTable();
+}
+
+async function saveDocClientsToStorage() {
+  const serial = docClients.map(c => ({
+    codigoCliente: c.codigoCliente || '',
+    nroDocumento: c.nroDocumento || '',
+    nombreCliente: c.nombreCliente || '',
+    tipoCliente: c.tipoCliente || '',
+    documentoActualizar: c.documentoActualizar || '',
+    fechaProgramada: c.fechaProgramada ? c.fechaProgramada.toISOString() : null,
+    fechaGestion: c.fechaGestion || '',
+    tipoRespuesta: c.tipoRespuesta || 'Sin Gestión',
+    proximaGestion: c.proximaGestion || '',
+    mes: c.mes || '',
+    comentariosJSON: JSON.stringify(c.comentarios || []),
+    // columna vieja, solo por compatibilidad
+    estado: estadoCompat(c.tipoRespuesta, c._estadoOrig, MAPA_RESPUESTA_DOC_A_VIEJO)
+  }));
+  const r = await apiGuardarSiNoCambio('DocClients', serial);
+  if (r && r.desfase) return { ok: false, desfase: true };
+  if (!r.ok) avisarFalloConexion('Actualización de Documentos (guardado)');
+  return { ok: !!r.ok };
+}
+
+// Índices de docClients que pasan búsqueda + filtros de fecha.
+function docIndicesFiltrados() {
+  const term = valorDe('doc-search').trim().toLowerCase();
+  const progDesde = valorDe('doc-prog-desde'), progHasta = valorDe('doc-prog-hasta');
+  const proxDesde = valorDe('doc-prox-desde'), proxHasta = valorDe('doc-prox-hasta');
+  return docClients.map((c, idx) => idx).filter(idx => {
+    const c = docClients[idx];
+    if (term && !(String(c.codigoCliente||'').toLowerCase().includes(term) ||
+                  String(c.nombreCliente||'').toLowerCase().includes(term))) return false;
+    if (!enRango(c.fechaProgramada, progDesde, progHasta)) return false;
+    if (!enRango(c.proximaGestion, proxDesde, proxHasta)) return false;
+    if (!pasaFiltroPendientes(c, docPendFiltro)) return false;
+    // El filtro de pendientes (hoy / vencidas) manda: muestra la fila esté o no en la bandeja.
+    if (!docPendFiltro && docAsigFiltro === 'asignados' && !enBandeja(c, 'documentacion')) return false;
+    return true;
+  });
+}
+
+function renderDocTable() {
+  const tbody = document.getElementById('tbody-doc');
+  if (!tbody) return;
+  renderPendFiltroChips('doc');
+  renderAsigFiltroChips('doc');
+  actualizarPendientes();
+  tbody.innerHTML = '';
+  if (docClients.length === 0) {
+    tbody.innerHTML = '<tr id="doc-empty"><td colspan="10" class="empty" style="text-align:center;padding:20px;">📤 Sin cartera cargada. Cargue la cartera de clientes desde "Cargar Datos".</td></tr>';
+    actualizarContadorFiltro('doc-count', 0, 0);
+    return;
+  }
+  const indices = docIndicesFiltrados();
+
+  if (indices.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty" style="text-align:center;padding:20px;">🔎 ${docPendFiltro === 'hoy' ? 'No hay gestiones programadas para hoy.' : docPendFiltro === 'vencidas' ? 'No hay gestiones vencidas. 👌' : (docAsigFiltro === 'asignados' ? 'No hay clientes asignados que coincidan. Asigná el mes desde "Cargar Datos" o elegí "Todos".' : 'Ningún cliente coincide con la búsqueda.')}</td></tr>`;
+    actualizarContadorFiltro('doc-count', 0, docClients.length);
+    return;
+  }
+
+  indices.forEach(idx => {
+    const c = docClients[idx];
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    if (gestionVencida(c)) tr.classList.add('row-vencida');
+    tr.innerHTML = buildDocRowHTML(c, idx);
+    tbody.appendChild(tr);
+    bindDocRowEvents(tr, idx);
+  });
+  actualizarContadorFiltro('doc-count', indices.length, docClients.length);
+}
+
+function buildDocRowHTML(c, idx) {
+  const esc = v => String(v === undefined || v === null ? '' : v).replace(/"/g, '&quot;');
+  const fechaProgStr = c.fechaProgramada ? fmtDate(new Date(c.fechaProgramada)) : '—';
+  const claseProx = gestionVencida(c) ? 'cell-vencida' : '';
+  return `
+    <td class="auto center">${idx+1}</td>
+    <td class="cell-auto">${c.codigoCliente || '—'}</td>
+    <td class="cell-auto">${c.nroDocumento || '—'}</td>
+    <td class="cell-auto" style="text-align:left;">${c.nombreCliente || '—'}</td>
+    <td class="cell-auto">${fechaProgStr}</td>
+    <td>${celdaFecha(c.fechaGestion, 'fechaGestion', 'onDocFieldChange')}</td>
+    <td class="td-select-respuesta"></td>
+    <td class="${claseProx}">${celdaFecha(c.proximaGestion, 'proximaGestion', 'onDocFieldChange')}</td>
+    <td class="doc-eye-cell">${buildEyeCellHTML(idx)}</td>
+    <td class="comment-cell">${buildIconCellHTML('documentacion', idx)}</td>
+  `;
+}
+
+function bindDocRowEvents(tr, idx) {
+  const td = tr.querySelector('.td-select-respuesta');
+  const sel = makeSelect('tipoRespuestaDoc', function() {
+    docClients[idx].tipoRespuesta = this.value || 'Sin Gestión';
+    programarGuardado('doc', saveDocClientsToStorage);
+    renderDocTable();
+  });
+  sel.value = docClients[idx].tipoRespuesta || 'Sin Gestión';
+  td.appendChild(sel);
+}
+
+function onDocFieldChange(inp) {
+  const tr = inp.closest('tr');
+  const idx = +tr.dataset.idx;
+  if (!docClients[idx]) return;
+  const field = inp.dataset.field;
+  const prevVal = docClients[idx][field];
+  docClients[idx][field] = (inp.type === 'date') ? fechaDesdeInput(inp) : inp.value;
+
+  // Al registrar por primera vez una Fecha de Gestión, si seguía en "Sin Gestión",
+  // se tipifica como "Solicitado al cliente" para que no quede una gestión hecha sin clasificar.
+  if (field === 'fechaGestion' && !prevVal && docClients[idx].fechaGestion &&
+      (!docClients[idx].tipoRespuesta || docClients[idx].tipoRespuesta === 'Sin Gestión')) {
+    docClients[idx].tipoRespuesta = 'Solicitado al cliente';
+    const sel = tr.querySelector('select[data-list-key="tipoRespuestaDoc"]');
+    if (sel) sel.value = 'Solicitado al cliente';
+  }
+  actualizarPendientes();
+  programarGuardado('doc', saveDocClientsToStorage);
+}
+
+function normalizeHeader(h) {
+  return String(h || '').replace(/^\uFEFF/, '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');
+}
+
+function parseCSV(text) {
+  const firstLine = text.split(/\r?\n/)[0] || '';
+  const delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+  return lines.map(line => line.split(delim).map(c => c.trim().replace(/^"|"$/g,'')));
+}
+
+function getBusinessDaysInMonth(year, monthIndex) {
+  const days = [];
+  const d = new Date(year, monthIndex, 1);
+  while (d.getMonth() === monthIndex) {
+    const dow = d.getDay(); // 0=domingo, 6=sábado
+    if (dow !== 0 && dow !== 6) days.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
+function distributeDates(count, year, monthIndex) {
+  const businessDays = getBusinessDaysInMonth(year, monthIndex);
+  if (businessDays.length === 0) return [];
+  const dates = [];
+  for (let i = 0; i < count; i++) dates.push(businessDays[i % businessDays.length]);
+  return dates;
+}
+
+// ═══════════════════════════════════════════════
+//  LÍNEAS DE CRÉDITO
+// ═══════════════════════════════════════════════
+let lineaClients = []; // {codigoCliente,nroDocumento,nombreCliente,tipoCliente,lineaVigente,fechaProgramada:Date|null,fechaGestion,tipoRespuesta,proximaGestion,nuevaLinea,comentarios,mes}
+
+async function loadLineaClientsFromStorage() {
+  const datos = await apiListar('LineaClients');
+  if (datos !== null) registrarHuella('LineaClients', datos);
+  if (datos === null) { avisarFalloConexion('Líneas de Crédito'); lineaClients = []; return; }
+  lineaClients = datos.map(d => {
+    let comentarios = [];
+    try { comentarios = d.comentariosJSON ? JSON.parse(d.comentariosJSON) : []; } catch(e) { comentarios = []; }
+    return {
+      codigoCliente: d.codigoCliente || '',
+      nroDocumento: d.nroDocumento || '',
+      nombreCliente: d.nombreCliente || '',
+      tipoCliente: d.tipoCliente || '',
+      lineaVigente: d.lineaVigente || '',
+      fechaProgramada: d.fechaProgramada ? new Date(d.fechaProgramada) : null,
+      // Compatibilidad: antes este campo se llamaba "fechaRevision".
+      fechaGestion: normalizarFecha(d.fechaGestion) || normalizarFecha(d.fechaRevision),
+      tipoRespuesta: migrarTipoRespuestaLinea(d),
+      _estadoOrig: d.estado || '',
+      proximaGestion: normalizarFecha(d.proximaGestion),
+      nuevaLinea: d.nuevaLinea || '',
+      comentarios,
+      mes: d.mes || ''
+    };
+  });
+}
+
+async function saveLineaClientsToStorage() {
+  const serial = lineaClients.map(c => ({
+    codigoCliente: c.codigoCliente || '',
+    nroDocumento: c.nroDocumento || '',
+    nombreCliente: c.nombreCliente || '',
+    tipoCliente: c.tipoCliente || '',
+    lineaVigente: c.lineaVigente || '',
+    fechaProgramada: c.fechaProgramada ? c.fechaProgramada.toISOString() : null,
+    fechaGestion: c.fechaGestion || '',
+    tipoRespuesta: c.tipoRespuesta || 'Sin Gestión',
+    proximaGestion: c.proximaGestion || '',
+    nuevaLinea: c.nuevaLinea || '',
+    mes: c.mes || '',
+    comentariosJSON: JSON.stringify(c.comentarios || []),
+    // columnas viejas, solo por compatibilidad
+    estado: estadoCompat(c.tipoRespuesta, c._estadoOrig, MAPA_RESPUESTA_LINEA_A_VIEJO),
+    fechaRevision: c.fechaGestion || ''
+  }));
+  const r = await apiGuardarSiNoCambio('LineaClients', serial);
+  if (r && r.desfase) return { ok: false, desfase: true };
+  if (!r.ok) avisarFalloConexion('Líneas de Crédito (guardado)');
+  return { ok: !!r.ok };
+}
+
+function limpiarFiltrosLineas() {
+  ['lin-search','lin-prog-desde','lin-prog-hasta','lin-prox-desde','lin-prox-hasta'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  linPendFiltro = '';
+  linAsigFiltro = 'asignados';
+  renderLineasTable();
+}
+
+// Índices de lineaClients que pasan búsqueda + filtros de fecha.
+function lineasIndicesFiltrados() {
+  const term = valorDe('lin-search').trim().toLowerCase();
+  const progDesde = valorDe('lin-prog-desde'), progHasta = valorDe('lin-prog-hasta');
+  const proxDesde = valorDe('lin-prox-desde'), proxHasta = valorDe('lin-prox-hasta');
+  return lineaClients.map((c, idx) => idx).filter(idx => {
+    const c = lineaClients[idx];
+    if (term && !(String(c.codigoCliente||'').toLowerCase().includes(term) ||
+                  String(c.nombreCliente||'').toLowerCase().includes(term))) return false;
+    if (!enRango(c.fechaProgramada, progDesde, progHasta)) return false;
+    if (!enRango(c.proximaGestion, proxDesde, proxHasta)) return false;
+    if (!pasaFiltroPendientes(c, linPendFiltro)) return false;
+    if (!linPendFiltro && linAsigFiltro === 'asignados' && !enBandeja(c, 'lineas')) return false;
+    return true;
+  });
+}
+
+function renderLineasTable() {
+  const tbody = document.getElementById('tbody-lineas');
+  if (!tbody) return;
+  renderPendFiltroChips('lin');
+  renderAsigFiltroChips('lin');
+  actualizarPendientes();
+  tbody.innerHTML = '';
+  if (lineaClients.length === 0) {
+    tbody.innerHTML = '<tr id="lin-empty"><td colspan="11" class="empty" style="text-align:center;padding:20px;">📤 Sin cartera cargada. Cargue la cartera de clientes desde "Cargar Datos".</td></tr>';
+    actualizarContadorFiltro('lin-count', 0, 0);
+    return;
+  }
+  const indices = lineasIndicesFiltrados();
+
+  if (indices.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="11" class="empty" style="text-align:center;padding:20px;">🔎 ${linPendFiltro === 'hoy' ? 'No hay gestiones programadas para hoy.' : linPendFiltro === 'vencidas' ? 'No hay gestiones vencidas. 👌' : (linAsigFiltro === 'asignados' ? 'No hay clientes asignados que coincidan. Asigná el mes desde "Cargar Datos" o elegí "Todos".' : 'Ningún cliente coincide con la búsqueda.')}</td></tr>`;
+    actualizarContadorFiltro('lin-count', 0, lineaClients.length);
+    return;
+  }
+
+  indices.forEach(idx => {
+    const c = lineaClients[idx];
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    if (gestionVencida(c)) tr.classList.add('row-vencida');
+    tr.innerHTML = buildLineasRowHTML(c, idx);
+    tbody.appendChild(tr);
+    bindLineasRowEvents(tr, idx);
+  });
+  actualizarContadorFiltro('lin-count', indices.length, lineaClients.length);
+}
+
+function buildLineasRowHTML(c, idx) {
+  const esc = v => String(v === undefined || v === null ? '' : v).replace(/"/g, '&quot;');
+  const fechaProgStr = c.fechaProgramada ? fmtDate(new Date(c.fechaProgramada)) : '—';
+  const claseProx = gestionVencida(c) ? 'cell-vencida' : '';
+  return `
+    <td class="auto center">${idx+1}</td>
+    <td class="cell-auto">${c.codigoCliente || '—'}</td>
+    <td class="cell-auto">${c.nroDocumento || '—'}</td>
+    <td class="cell-auto" style="text-align:left;">${c.nombreCliente || '—'}</td>
+    <td class="cell-auto" style="text-align:right;">${formatMiles(c.lineaVigente) || '—'}</td>
+    <td class="cell-auto">${fechaProgStr}</td>
+    <td>${celdaFecha(c.fechaGestion, 'fechaGestion', 'onLineasFieldChange')}</td>
+    <td class="td-select-respuesta-lin"></td>
+    <td class="${claseProx}">${celdaFecha(c.proximaGestion, 'proximaGestion', 'onLineasFieldChange')}</td>
+    <td><input class="cell-input" type="text" style="text-align:right;" placeholder="Gs." value="${esc(formatMiles(c.nuevaLinea))}" data-field="nuevaLinea" oninput="onMontoFieldInput(this);onLineasFieldChange(this)"></td>
+    <td class="comment-cell">${buildIconCellHTML('lineas', idx)}</td>
+  `;
+}
+
+function bindLineasRowEvents(tr, idx) {
+  const td = tr.querySelector('.td-select-respuesta-lin');
+  const sel = makeSelect('tipoRespuestaLinea', function() {
+    lineaClients[idx].tipoRespuesta = this.value || 'Sin Gestión';
+    programarGuardado('lineas', saveLineaClientsToStorage);
+    renderLineasTable();
+  });
+  sel.value = lineaClients[idx].tipoRespuesta || 'Sin Gestión';
+  td.appendChild(sel);
+}
+
+function onLineasFieldChange(inp) {
+  const tr = inp.closest('tr');
+  const idx = +tr.dataset.idx;
+  if (!lineaClients[idx]) return;
+  const field = inp.dataset.field;
+  const prevVal = lineaClients[idx][field];
+  // Los montos se guardan solo con dígitos (los puntos de miles son de presentación):
+  // así Google Sheets no los reinterpreta como texto o como otro número.
+  lineaClients[idx][field] = (field === 'nuevaLinea')
+    ? inp.value.replace(/[^\d]/g, '')
+    : (inp.type === 'date' ? fechaDesdeInput(inp) : inp.value);
+
+  if (field === 'fechaGestion' && !prevVal && lineaClients[idx].fechaGestion &&
+      (!lineaClients[idx].tipoRespuesta || lineaClients[idx].tipoRespuesta === 'Sin Gestión')) {
+    lineaClients[idx].tipoRespuesta = 'Solicitado al cliente';
+    const sel = tr.querySelector('select[data-list-key="tipoRespuestaLinea"]');
+    if (sel) sel.value = 'Solicitado al cliente';
+  }
+  actualizarPendientes();
+  programarGuardado('lineas', saveLineaClientsToStorage);
+}
+
+// ═══════════════════════════════════════════════
+//  CARGA UNIFICADA DE DATOS (pestaña "Cargar Datos")
+//  Alimenta simultáneamente Actualización de Documentos y Líneas de Crédito
+// ═══════════════════════════════════════════════
+function descargarPlantillaUnificada() {
+  const headers = ['CODIGO CLIENTE','NRO. DOCUMENTO (CI/RUC)','NOMBRE DEL CLIENTE/RAZON SOCIAL','TIPO DE CLIENTE','LINEA VIGENTE (GS)'];
+  const ejemplo  = ['C-001','1234567','Ejemplo S.A.','Jurídica','50000000'];
+  const csv = headers.join(';') + '\n' + ejemplo.join(';');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'plantilla_cartera_clientes.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function onUnifFileSelected(input) {
+  const nameEl = document.getElementById('unif-file-name');
+  if (!nameEl) return;
+  if (input.files && input.files.length > 0) {
+    nameEl.textContent = input.files[0].name;
+    nameEl.style.color = '#2E7D32';
+    nameEl.title = input.files[0].name;
+  } else {
+    nameEl.textContent = 'Ningún archivo seleccionado';
+    nameEl.style.color = '#455A64';
+    nameEl.title = '';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  v22 — CARTERA COMPLETA + ASIGNACIÓN MENSUAL
+//  1) "Cargar Cartera" cruza por Código Cliente y conserva el historial.
+//  2) "Asignar mes" toma de la cartera las cuentas elegibles hasta completar
+//     "Cuentas a asignar por mes" (PARAMS.minClientes), por separado para
+//     Documentos y para Líneas, y las reparte entre los días hábiles.
+//  3) Los días no laborables (Listas) no reciben asignaciones y, al guardarlos,
+//     se reprograman las gestiones ya asignadas que caigan en ellos.
+// ═══════════════════════════════════════════════
+
+// ── Criterios de elegibilidad ──
+// Documentos: se asigna mientras el Tipo de Respuesta no sea "Docs. Actualizados" y
+// quede al menos un documento del catálogo (Listas → Documento a Actualizar) sin marcar.
+function docElegible(c) {
+  if (!c) return false;
+  if (String(c.tipoRespuesta || '').trim() === 'Docs. Actualizados') return false;
+  const catalogo = getListOptions('documentoTipo');
+  if (!catalogo.length) return true; // sin catálogo no hay forma de evaluar la segunda condición
+  const marcados = docSelectedArr(c);
+  return catalogo.some(d => !marcados.includes(d));
+}
+
+// Líneas: se asigna mientras el Tipo de Respuesta no sea "Mantiene LC Actual" ni "Nueva LC GS.".
+const RESPUESTAS_CIERRAN_LINEA = ['Mantiene LC Actual', 'Nueva LC GS.'];
+function lineaElegible(c) {
+  if (!c) return false;
+  return !RESPUESTAS_CIERRAN_LINEA.includes(String(c.tipoRespuesta || '').trim());
+}
+
+const AREAS_ASIGNACION = {
+  documentacion: { etiqueta: 'Actualización de Documentos', icono: '📄', datos: () => docClients,   elegible: docElegible },
+  lineas:        { etiqueta: 'Líneas de Crédito',           icono: '💳', datos: () => lineaClients, elegible: lineaElegible }
+};
+
+// Un cliente está en la bandeja si fue asignado y, o bien es del mes en curso,
+// o bien quedó abierto de un mes anterior (arrastre).
+function enBandeja(c, area, mesLabel) {
+  if (!c || !c.fechaProgramada) return false;
+  const mes = mesLabel || fmtMonth(new Date());
+  if ((c.mes || '') === mes) return true;
+  return AREAS_ASIGNACION[area].elegible(c);
+}
+
+// ── Filtro Asignados / Todos (pestañas 3 y 4) ──
+let docAsigFiltro = 'asignados';
+let linAsigFiltro = 'asignados';
+
+function setAsigFiltro(tabla, modo) {
+  if (tabla === 'doc') { docAsigFiltro = modo; renderDocTable(); }
+  else { linAsigFiltro = modo; renderLineasTable(); }
+}
+
+function renderAsigFiltroChips(tabla) {
+  const cont = document.getElementById(tabla === 'doc' ? 'doc-asig-chips' : 'lin-asig-chips');
+  if (!cont) return;
+  const actual = tabla === 'doc' ? docAsigFiltro : linAsigFiltro;
+  const area = tabla === 'doc' ? 'documentacion' : 'lineas';
+  const datos = AREAS_ASIGNACION[area].datos() || [];
+  const nAsig = datos.filter(c => enBandeja(c, area)).length;
+  const chip = (modo, etiqueta) =>
+    `<button type="button" class="mc-chip${actual === modo ? ' active' : ''}" onclick="setAsigFiltro('${tabla}','${modo}')">${etiqueta}</button>`;
+  cont.innerHTML = `<span class="filter-sep">Ver:</span>${chip('asignados', `Asignados (${nAsig})`)}${chip('todos', `Todos (${datos.length})`)}`;
+}
+
+// ── Días no laborables ──
+function getDiasNoLaborables() {
+  return (getListOptions('diasNoLaborables') || []).filter(d => d && d.desde);
+}
+
+function esDiaNoLaborable(iso) {
+  return getDiasNoLaborables().some(d => iso >= d.desde && iso <= (d.hasta || d.desde));
+}
+
+function esDiaHabil(fecha) {
+  const dow = fecha.getDay();
+  if (dow === 0 || dow === 6) return false;
+  return !esDiaNoLaborable(aISO(fecha));
+}
+
+// Días hábiles del mes, desde `desdeISO` (inclusive).
+function diasHabilesDelMes(year, monthIndex, desdeISO) {
+  const dias = [];
+  const d = new Date(year, monthIndex, 1);
+  while (d.getMonth() === monthIndex) {
+    if (aISO(d) >= (desdeISO || '') && esDiaHabil(d)) dias.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dias;
+}
+
+// Reparte `total` asignaciones entre `n` días de forma pareja a lo largo del mes.
+function cuposPorDia(total, n) {
+  const cupos = [];
+  for (let i = 0; i < n; i++) cupos.push(Math.floor((i + 1) * total / n) - Math.floor(i * total / n));
+  return cupos;
+}
+
+// Fecha de la última gestión (para la prioridad). '' si nunca se gestionó.
+function ultimaGestionISO(c) {
+  return aISO(parseDateInput(c.fechaGestion)) || '';
+}
+
+// ── Planificación (no modifica nada) ──
+// Devuelve qué clientes se asignarían, en qué fecha, y el resumen para la vista previa.
+function planificarAsignacion(area, year, monthIndex, cuentasMes, hoy) {
+  const cfg = AREAS_ASIGNACION[area];
+  const datos = cfg.datos() || [];
+  const mesLabel = fmtMonth(new Date(year, monthIndex, 1));
+  const hoyISO = aISO(hoy || new Date());
+  const primerISO = aISO(new Date(year, monthIndex, 1));
+  const desdeISO = hoyISO > primerISO ? hoyISO : primerISO;
+  const dias = diasHabilesDelMes(year, monthIndex, desdeISO);
+
+  const yaDelMes = [], arrastre = [], candidatos = [];
+  datos.forEach((c, idx) => {
+    if (c.fechaProgramada && (c.mes || '') === mesLabel) yaDelMes.push(idx);
+    else if (c.fechaProgramada && cfg.elegible(c)) arrastre.push(idx);
+    else if (!c.fechaProgramada && cfg.elegible(c)) candidatos.push(idx);
+  });
+
+  // Prioridad: 1) nunca asignados ni gestionados, 2) última gestión más antigua, 3) orden de la cartera.
+  candidatos.sort((a, b) => {
+    const ca = datos[a], cb = datos[b];
+    const na = (!ca.fechaGestion) ? 0 : 1, nb = (!cb.fechaGestion) ? 0 : 1;
+    if (na !== nb) return na - nb;
+    const ga = ultimaGestionISO(ca), gb = ultimaGestionISO(cb);
+    if (ga !== gb) return ga < gb ? -1 : 1;
+    return a - b;
+  });
+
+  const cupo = Math.max(0, cuentasMes - yaDelMes.length - arrastre.length);
+  const plan = { area, mesLabel, cuentasMes, dias, yaDelMes, arrastre, disponibles: candidatos.length, cupo, nuevos: [] };
+  if (!dias.length || !cupo) return plan;
+
+  // Carga de cada día con lo que ya está en la bandeja (asignados del mes + arrastre con fecha en el mes).
+  const cupos = cuposPorDia(cuentasMes, dias.length);
+  const isoDias = dias.map(aISO);
+  const carga = isoDias.map(() => 0);
+  yaDelMes.concat(arrastre).forEach(idx => {
+    const i = isoDias.indexOf(aISO(datos[idx].fechaProgramada));
+    if (i >= 0) carga[i]++;
+  });
+
+  candidatos.slice(0, cupo).forEach(idx => {
+    // Primer día con lugar según su cupo; si todos están llenos, el de menor carga.
+    let i = carga.findIndex((n, k) => n < cupos[k]);
+    if (i < 0) i = carga.indexOf(Math.min(...carga));
+    carga[i]++;
+    plan.nuevos.push({ idx, fecha: dias[i] });
+  });
+  plan.nuevos.sort((a, b) => a.fecha - b.fecha || a.idx - b.idx);
+  plan.cupos = cupos;
+  plan.carga = carga;
+  return plan;
+}
+
+// ── Vista previa ──
+let _planAsignacion = null;
+
+function previsualizarAsignacion() {
+  const cont = document.getElementById('asig-preview');
+  const mesVal = valorDe('asig-mes');
+  if (!mesVal) { cont.innerHTML = '<div class="asig-aviso">Elegí el mes a asignar.</div>'; return; }
+  const [year, month] = mesVal.split('-').map(Number);
+  const hoy = new Date();
+  if (year * 12 + (month - 1) < hoy.getFullYear() * 12 + hoy.getMonth()) {
+    cont.innerHTML = '<div class="asig-aviso">No se puede asignar un mes que ya terminó.</div>';
+    return;
+  }
+  if (!docClients.length && !lineaClients.length) {
+    cont.innerHTML = '<div class="asig-aviso">Todavía no hay cartera cargada.</div>';
+    return;
+  }
+  const cuentas = PARAMS.minClientes;
+  const planes = ['documentacion', 'lineas'].map(a => planificarAsignacion(a, year, month - 1, cuentas, hoy));
+  _planAsignacion = { year, monthIndex: month - 1, planes };
+
+  const bloques = planes.map(p => {
+    const cfg = AREAS_ASIGNACION[p.area];
+    const datos = cfg.datos();
+    const avisos = [];
+    if (!p.dias.length) avisos.push('No quedan días hábiles en el mes (revisá los días no laborables).');
+    if (p.arrastre.length + p.yaDelMes.length >= p.cuentasMes) {
+      avisos.push(`La bandeja ya tiene ${p.arrastre.length + p.yaDelMes.length} cuentas (arrastre + asignadas este mes), que ocupan las ${p.cuentasMes} del mes: no se asignan cuentas nuevas.`);
+    } else if (p.disponibles < p.cupo) {
+      avisos.push(`Solo hay ${p.disponibles} cuentas elegibles sin asignar, menos que el cupo de ${p.cupo}.`);
+    }
+    const porDia = {};
+    p.nuevos.forEach(n => { const k = fmtDate(n.fecha); porDia[k] = (porDia[k] || 0) + 1; });
+    const filasDias = Object.keys(porDia).map(k => `<tr><td>${k}</td><td>${porDia[k]}</td></tr>`).join('');
+    const filasCli = p.nuevos.map(n => {
+      const c = datos[n.idx];
+      return `<tr><td>${fmtDate(n.fecha)}</td><td>${c.codigoCliente || ''}</td><td>${c.nombreCliente || ''}</td><td>${c.fechaGestion ? 'Últ. gestión ' + c.fechaGestion : 'Nunca gestionado'}</td></tr>`;
+    }).join('');
+    return `
+      <div class="asig-bloque">
+        <h3>${cfg.icono} ${cfg.etiqueta}</h3>
+        <div class="asig-resumen">
+          <div class="asig-kpi"><b>${p.cuentasMes}</b><span>Cuentas a asignar por mes</span></div>
+          <div class="asig-kpi"><b>${p.arrastre.length}</b><span>Arrastradas abiertas de meses anteriores</span></div>
+          <div class="asig-kpi"><b>${p.yaDelMes.length}</b><span>Ya asignadas en ${p.mesLabel}</span></div>
+          <div class="asig-kpi"><b>${p.nuevos.length}</b><span>Nuevas a asignar</span></div>
+          <div class="asig-kpi"><b>${p.disponibles}</b><span>Elegibles sin asignar en la cartera</span></div>
+          <div class="asig-kpi"><b>${p.dias.length}</b><span>Días hábiles disponibles</span></div>
+        </div>
+        ${avisos.map(a => `<div class="asig-aviso">⚠️ ${a}</div>`).join('')}
+        ${p.nuevos.length ? `
+          <div style="display:grid;grid-template-columns:minmax(140px,200px) 1fr;gap:14px;align-items:start;">
+            <div><table class="asig-tabla"><thead><tr><th>Día</th><th>Nuevas</th></tr></thead><tbody>${filasDias}</tbody></table></div>
+            <div class="asig-scroll"><table class="asig-tabla"><thead><tr><th>Fecha</th><th>Código</th><th>Cliente</th><th>Motivo de prioridad</th></tr></thead><tbody>${filasCli}</tbody></table></div>
+          </div>` : ''}
+      </div>`;
+  }).join('');
+
+  const hayNuevos = planes.some(p => p.nuevos.length);
+  cont.innerHTML = `
+    ${bloques}
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+      ${hayNuevos ? '<button class="btn-add-row" style="margin-top:0;background:var(--verde);" onclick="confirmarAsignacion()">✅ Confirmar asignación</button>' : ''}
+      <button class="btn-add-row btn-secondary" style="margin-top:0;" onclick="cancelarAsignacion()">Cerrar</button>
+      <span id="asig-status" style="font-size:11.5px;"></span>
+    </div>`;
+}
+
+function cancelarAsignacion() {
+  _planAsignacion = null;
+  const cont = document.getElementById('asig-preview');
+  if (cont) cont.innerHTML = '';
+}
+
+async function confirmarAsignacion() {
+  if (!_planAsignacion) return;
+  const statusEl = document.getElementById('asig-status');
+  const { year, monthIndex } = _planAsignacion;
+  // Se vuelve a calcular con los datos actuales por si algo cambió mientras se miraba la vista previa.
+  const planes = ['documentacion', 'lineas'].map(a => planificarAsignacion(a, year, monthIndex, PARAMS.minClientes, new Date()));
+  planes.forEach(p => {
+    const datos = AREAS_ASIGNACION[p.area].datos();
+    p.nuevos.forEach(n => {
+      datos[n.idx].fechaProgramada = new Date(n.fecha.getFullYear(), n.fecha.getMonth(), n.fecha.getDate());
+      datos[n.idx].mes = p.mesLabel;
+    });
+  });
+  if (statusEl) { statusEl.textContent = '⏳ Guardando…'; statusEl.style.color = '#E65100'; }
+  const rDoc = planes[0].nuevos.length ? await saveDocClientsToStorage() : { ok: true };
+  const rLin = planes[1].nuevos.length ? await saveLineaClientsToStorage() : { ok: true };
+  renderDocTable();
+  renderLineasTable();
+  if (rDoc.ok && rLin.ok) {
+    _planAsignacion = null;
+    document.getElementById('asig-preview').innerHTML =
+      `<div class="asig-aviso" style="background:var(--verde-claro);border-color:var(--verde);color:var(--verde);">✔ Asignación guardada: ${planes[0].nuevos.length} cuentas en Documentos y ${planes[1].nuevos.length} en Líneas de Crédito (${planes[0].mesLabel}).</div>`;
+  } else if (statusEl) {
+    statusEl.textContent = '❌ No se pudo guardar la asignación completa. Recargá la página y volvé a generar la vista previa.';
+    statusEl.style.color = '#C62828';
+  }
+}
+
+// ── Reprogramación por días no laborables ──
+// Mueve las gestiones asignadas, todavía sin Fecha de Gestión, cuya fecha programada
+// (de hoy en adelante) cae en un día no hábil, al día hábil del mismo mes con menos
+// carga; a igual carga, el más cercano a la fecha original.
+function planificarReprogramacion(area, hoy) {
+  const cfg = AREAS_ASIGNACION[area];
+  const datos = cfg.datos() || [];
+  const hoyISO = aISO(hoy || new Date());
+  const movs = [];
+  const cargaPorDia = {};
+  datos.forEach(c => {
+    if (c.fechaProgramada) { const k = aISO(c.fechaProgramada); cargaPorDia[k] = (cargaPorDia[k] || 0) + 1; }
+  });
+  datos.forEach((c, idx) => {
+    if (!c.fechaProgramada || c.fechaGestion || !cfg.elegible(c)) return;
+    const f = new Date(c.fechaProgramada);
+    const iso = aISO(f);
+    if (iso < hoyISO || esDiaHabil(f)) return;
+    let opciones = diasHabilesDelMes(f.getFullYear(), f.getMonth(), hoyISO);
+    if (!opciones.length) {
+      // Sin días hábiles en lo que queda del mes: primer día hábil siguiente.
+      const d = new Date(f); d.setDate(d.getDate() + 1);
+      while (!esDiaHabil(d)) d.setDate(d.getDate() + 1);
+      opciones = [d];
+    }
+    opciones.sort((a, b) => {
+      const ca = cargaPorDia[aISO(a)] || 0, cb = cargaPorDia[aISO(b)] || 0;
+      if (ca !== cb) return ca - cb;
+      return Math.abs(a - f) - Math.abs(b - f);
+    });
+    const destino = opciones[0];
+    cargaPorDia[iso]--;
+    cargaPorDia[aISO(destino)] = (cargaPorDia[aISO(destino)] || 0) + 1;
+    movs.push({ idx, desde: f, hasta: destino });
+  });
+  return movs;
+}
+
+async function reprogramarPorDiasNoLaborables() {
+  const hoy = new Date();
+  const movDoc = planificarReprogramacion('documentacion', hoy);
+  const movLin = planificarReprogramacion('lineas', hoy);
+  if (!movDoc.length && !movLin.length) return { movidos: 0 };
+  const detalle = (movs, area) => movs.slice(0, 8).map(m => {
+    const c = AREAS_ASIGNACION[area].datos()[m.idx];
+    return `  • ${c.nombreCliente}: ${fmtDate(m.desde)} → ${fmtDate(m.hasta)}`;
+  }).join('\n');
+  const txt = `Hay gestiones programadas en días no laborables.\n\n` +
+    (movDoc.length ? `📄 Documentos: ${movDoc.length}\n${detalle(movDoc, 'documentacion')}${movDoc.length > 8 ? '\n  …' : ''}\n\n` : '') +
+    (movLin.length ? `💳 Líneas de Crédito: ${movLin.length}\n${detalle(movLin, 'lineas')}${movLin.length > 8 ? '\n  …' : ''}\n\n` : '') +
+    '¿Reprogramarlas a los días hábiles indicados?';
+  if (!confirm(txt)) return { movidos: 0, cancelado: true };
+  movDoc.forEach(m => { docClients[m.idx].fechaProgramada = m.hasta; });
+  movLin.forEach(m => { lineaClients[m.idx].fechaProgramada = m.hasta; });
+  const rDoc = movDoc.length ? await saveDocClientsToStorage() : { ok: true };
+  const rLin = movLin.length ? await saveLineaClientsToStorage() : { ok: true };
+  renderDocTable();
+  renderLineasTable();
+  return { movidos: movDoc.length + movLin.length, ok: rDoc.ok && rLin.ok };
+}
+
+// ── Tarjeta de días no laborables (Listas) ──
+function renderDiasNoLaborablesUI() {
+  const ul = document.getElementById('dnl-list');
+  if (!ul) return;
+  const items = getDiasNoLaborables().slice().sort((a, b) => a.desde.localeCompare(b.desde));
+  LISTS.diasNoLaborables.items = items;
+  const esc = s => String(s || '').replace(/</g, '&lt;');
+  const fmtISO = iso => { const [a, m, d] = iso.split('-'); return `${d}/${m}/${a}`; };
+  ul.innerHTML = items.length ? items.map((d, i) => {
+    const rango = (d.hasta && d.hasta !== d.desde) ? `${fmtISO(d.desde)} al ${fmtISO(d.hasta)}` : fmtISO(d.desde);
+    return `<li><span><b>${esc(d.tipo)}</b> — ${rango}${d.detalle ? ' · ' + esc(d.detalle) : ''}</span>
+      <button class="drop-del" onclick="quitarDiaNoLaborable(${i})" title="Quitar">×</button></li>`;
+  }).join('') : '<li style="background:#fff;color:#90A4AE;font-style:italic;">Sin días cargados.</li>';
+}
+
+function agregarDiaNoLaborable() {
+  const desde = valorDe('dnl-desde');
+  let hasta = valorDe('dnl-hasta');
+  if (!desde) { alert('Elegí la fecha "Desde".'); return; }
+  if (hasta && hasta < desde) { alert('"Hasta" no puede ser anterior a "Desde".'); return; }
+  if (!hasta) hasta = desde;
+  LISTS.diasNoLaborables.items = getDiasNoLaborables().concat([{
+    desde, hasta, tipo: valorDe('dnl-tipo') || 'Feriado', detalle: valorDe('dnl-detalle').trim()
+  }]);
+  ['dnl-desde', 'dnl-hasta', 'dnl-detalle'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderDiasNoLaborablesUI();
+}
+
+function quitarDiaNoLaborable(i) {
+  const items = getDiasNoLaborables().slice().sort((a, b) => a.desde.localeCompare(b.desde));
+  items.splice(i, 1);
+  LISTS.diasNoLaborables.items = items;
+  renderDiasNoLaborablesUI();
+}
+
+async function guardarDiasNoLaborables() {
+  await saveLists();
+  const msg = document.getElementById('save-ok-dnl');
+  const r = await reprogramarPorDiasNoLaborables();
+  if (msg) {
+    msg.textContent = r.movidos
+      ? (r.ok ? `✔ Guardado. Se reprogramaron ${r.movidos} gestiones.` : '⚠️ Días guardados, pero la reprogramación no se pudo guardar.')
+      : '✔ Guardado correctamente';
+    msg.style.color = (r.movidos && !r.ok) ? '#C62828' : '';
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 5000);
+  }
+}
+
+// ── Carga de cartera (cruce por Código Cliente) ──
+const UNIF_HEADER_MAP = {
+  codigoCliente:       ['CODIGOCLIENTE','CODCLIENTE','CODIGO'],
+  nroDocumento:        ['NRODEDOCUMENTOCIRUC','NRODOCUMENTOCIRUC','NRODOCUMENTO','NRODEDOCUMENTO','CIRUC','DOCUMENTO','CI','RUC'],
+  nombreCliente:       ['NOMBREDELCLIENTERAZONSOCIAL','NOMBRECLIENTERAZONSOCIAL','NOMBRECLIENTE','RAZONSOCIAL','CLIENTE'],
+  tipoCliente:         ['TIPODECLIENTE','TIPOCLIENTE'],
+  lineaVigente:        ['LINEAVIGENTEGS','LINEAVIGENTE','LINEAACTUALGS','LINEAACTUAL']
+};
+
+function mapRowToUnifiedClient(headers, row) {
+  const obj = {};
+  headers.forEach((h, i) => {
+    const norm = normalizeHeader(h);
+    for (const key in UNIF_HEADER_MAP) {
+      if (obj[key] === undefined && UNIF_HEADER_MAP[key].includes(norm)) {
+        obj[key] = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : '';
+      }
+    }
+  });
+  return obj;
+}
+
+const claveCodigo = c => String(c && c.codigoCliente !== undefined && c.codigoCliente !== null ? c.codigoCliente : '').trim();
+
+function filaDocNueva(c) {
+  return {
+    codigoCliente: c.codigoCliente, nroDocumento: c.nroDocumento || '', nombreCliente: c.nombreCliente || '',
+    tipoCliente: c.tipoCliente || '', documentoActualizar: '', fechaProgramada: null, fechaGestion: '',
+    tipoRespuesta: 'Sin Gestión', _estadoOrig: '', proximaGestion: '', comentarios: [], mes: ''
+  };
+}
+
+function filaLineaNueva(c) {
+  return {
+    codigoCliente: c.codigoCliente, nroDocumento: c.nroDocumento || '', nombreCliente: c.nombreCliente || '',
+    tipoCliente: c.tipoCliente || '', lineaVigente: String(c.lineaVigente || '').replace(/[^\d]/g, ''),
+    fechaProgramada: null, fechaGestion: '', tipoRespuesta: 'Sin Gestión', _estadoOrig: '',
+    proximaGestion: '', nuevaLinea: '', comentarios: [], mes: ''
+  };
+}
+
+// Une la cartera del archivo con lo que ya hay. No toca las gestiones ni los comentarios.
+// Orden resultante: el del archivo, y al final los clientes que no vinieron (se conservan).
+function fusionarCartera(archivo) {
+  const docPorCod = new Map(docClients.map(c => [claveCodigo(c), c]));
+  const linPorCod = new Map(lineaClients.map(c => [claveCodigo(c), c]));
+  const res = { nuevos: 0, actualizados: 0, conservados: 0, docs: [], lineas: [] };
+  const vistos = new Set();
+
+  archivo.forEach(f => {
+    const k = claveCodigo(f);
+    vistos.add(k);
+    let d = docPorCod.get(k), l = linPorCod.get(k);
+    if (!d && !l) res.nuevos++; else res.actualizados++;
+    if (!d) d = filaDocNueva(f);
+    if (!l) l = filaLineaNueva(f);
+    // Datos maestros: se actualizan desde el archivo cuando vienen informados.
+    [d, l].forEach(x => {
+      if (f.nroDocumento) x.nroDocumento = f.nroDocumento;
+      if (f.nombreCliente) x.nombreCliente = f.nombreCliente;
+      if (f.tipoCliente) x.tipoCliente = f.tipoCliente;
+    });
+    const linea = String(f.lineaVigente || '').replace(/[^\d]/g, '');
+    if (linea) l.lineaVigente = linea;
+    res.docs.push(d);
+    res.lineas.push(l);
+  });
+
+  // Clientes que ya estaban y no vinieron en el archivo: se conservan, al final.
+  const restantes = [];
+  docClients.forEach(c => { const k = claveCodigo(c); if (!vistos.has(k)) { restantes.push(k); vistos.add(k); } });
+  lineaClients.forEach(c => { const k = claveCodigo(c); if (!vistos.has(k)) { restantes.push(k); vistos.add(k); } });
+  restantes.forEach(k => {
+    const d0 = docPorCod.get(k), l0 = linPorCod.get(k);
+    res.docs.push(d0 || filaDocNueva(l0));
+    res.lineas.push(l0 || filaLineaNueva(d0));
+  });
+  res.conservados = restantes.length;
+  return res;
+}
+
+function leerArchivoCartera(file) {
+  return new Promise((resolve, reject) => {
+    const isCSV = /\.csv$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+    reader.onload = e => {
+      try {
+        if (isCSV) {
+          let text = e.target.result;
+          if (typeof text === 'string') text = text.replace(/^﻿/, '');
+          resolve(parseCSV(text));
+        } else {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          resolve(XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' }));
+        }
+      } catch (err) { reject(err); }
+    };
+    if (isCSV) reader.readAsText(file, 'UTF-8');
+    else reader.readAsArrayBuffer(file);
+  });
+}
+
+async function cargarCartera() {
+  const fileInput = document.getElementById('unif-file-input');
+  const statusEl  = document.getElementById('unif-upload-status');
+  const aviso = (txt, color) => { statusEl.innerHTML = txt; statusEl.style.color = color; };
+
+  if (!fileInput.files.length) { aviso('⚠️ Seleccione un archivo primero.', '#C62828'); return; }
+
+  let rows;
+  try { rows = await leerArchivoCartera(fileInput.files[0]); }
+  catch (err) { aviso('❌ Error al leer el archivo: ' + err.message, '#C62828'); return; }
+  if (!rows || rows.length < 2) { aviso('⚠️ El archivo no contiene datos.', '#C62828'); return; }
+
+  const headers = rows[0];
+  const dataRows = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+  const mapeadas = dataRows.map(r => mapRowToUnifiedClient(headers, r));
+  if (!mapeadas.some(c => c.codigoCliente !== undefined)) {
+    aviso('❌ No se encontró la columna <b>Código Cliente</b>. Encabezados detectados: <i>' +
+      headers.map(h => String(h).trim()).join(', ') + '</i>. Use la plantilla (📥 Descargar Plantilla).', '#C62828');
+    return;
+  }
+
+  let sinCodigo = 0, repetidos = 0;
+  const vistos = new Set();
+  const archivo = [];
+  mapeadas.forEach(c => {
+    const k = claveCodigo(c);
+    if (!k) { sinCodigo++; return; }
+    if (vistos.has(k)) { repetidos++; return; }
+    vistos.add(k);
+    c.codigoCliente = k;
+    archivo.push(c);
+  });
+  if (!archivo.length) { aviso('❌ Ninguna fila tiene Código Cliente.', '#C62828'); return; }
+
+  const res = fusionarCartera(archivo);
+  const resumen = `Cartera del archivo: ${archivo.length} clientes.\n\n` +
+    `• Nuevos: ${res.nuevos}\n• Ya existentes (conservan gestiones y comentarios): ${res.actualizados}\n` +
+    `• En la plataforma pero no en el archivo (se conservan): ${res.conservados}\n` +
+    (sinCodigo ? `• Filas sin Código Cliente (descartadas): ${sinCodigo}\n` : '') +
+    (repetidos ? `• Códigos repetidos (se tomó la primera fila): ${repetidos}\n` : '') +
+    `\nLa carga NO asigna clientes: después usá "Asignar mes". ¿Confirmar?`;
+  if (!confirm(resumen)) { aviso('Carga cancelada. No se modificó nada.', '#455A64'); return; }
+
+  const docsAntes = docClients, linAntes = lineaClients, baseAntes = clientesBase;
+  docClients = res.docs;
+  lineaClients = res.lineas;
+  clientesBase = res.docs.map(c => ({
+    codigoCliente: c.codigoCliente || '', nroDocumento: c.nroDocumento || '',
+    nombreCliente: c.nombreCliente || '', tipoCliente: c.tipoCliente || '', fechaProgramada: null
+  }));
+
+  aviso('⏳ Guardando…', '#E65100');
+  const rDoc = await saveDocClientsToStorage();
+  const rLin = rDoc.ok ? await saveLineaClientsToStorage() : { ok: false };
+  if (!rDoc.ok || !rLin.ok) {
+    // Si no se pudo guardar, se vuelve a lo que había para no dejar la pantalla distinta de la planilla.
+    if (!rDoc.ok) { docClients = docsAntes; lineaClients = linAntes; clientesBase = baseAntes; }
+    renderDocTable(); renderLineasTable();
+    aviso(rDoc.ok
+      ? '⚠️ Documentos se guardó, pero Líneas de Crédito no. Recargá la página y volvé a cargar la cartera (el cruce por código evita duplicados).'
+      : '❌ No se pudo guardar la cartera. No se modificó nada. Revisá tu conexión y reintentá.', '#C62828');
+    return;
+  }
+  await saveClientesBaseToStorage();
+  renderDocTable();
+  renderLineasTable();
+  aviso(`✔ Cartera cargada: ${res.nuevos} nuevos, ${res.actualizados} existentes, ${res.conservados} conservados. ` +
+    `Ahora podés asignar el mes en "📅 Asignar mes".`, '#2E7D32');
+  fileInput.value = '';
+  onUnifFileSelected(fileInput);
+}
+
+// ═══════════════════════════════════════════════
+//  LIMPIEZA MANUAL DE TABLAS
+// ═══════════════════════════════════════════════
+function limpiarTodasLasTablas() {
+  if (!confirm('¿Limpiar TODAS las tablas (Nuevas Solicitudes, Tiempos de Respuesta, Actualización de Documentos y Líneas de Crédito)? Esta acción no se puede deshacer.')) return;
+
+  resetOperativo();
+
+  // los buscadores y filtros ya los limpia resetOperativo()
+
+  const statusEl = document.getElementById('limpiar-status');
+  if (statusEl) {
+    statusEl.textContent = '✔ Todas las tablas fueron reiniciadas correctamente.';
+    statusEl.style.color = '#2E7D32';
+  }
+}
+
+function resetOperativo() {
+  // Limpia todas las tablas operativas (solo a pedido manual del usuario)
+  carpetasData = [];
+  renderCarpetasTable();
+
+  docClients = [];
+  renderDocTable();
+
+  clientesBase = [];
+
+  lineaClients = [];
+  renderLineasTable();
+
+  ['carp-search','carp-desde','carp-hasta','doc-search','doc-prog-desde','doc-prog-hasta','doc-prox-desde','doc-prox-hasta',
+   'lin-search','lin-prog-desde','lin-prog-hasta','lin-prox-desde','lin-prox-hasta']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  docPendFiltro = '';
+  linPendFiltro = '';
+  docAsigFiltro = 'asignados';
+  linAsigFiltro = 'asignados';
+  actualizarPendientes();
+}
+
+// ═══════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  updateBannerNav(id);
+}
+
+function updateBannerNav(activeId) {
+  // only instrucciones and listas have banner buttons; deactivate both unless matched
+  document.querySelectorAll('.banner-nav-btn').forEach(b => {
+    b.classList.toggle('active', b.id === 'bnav-' + activeId);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+// Ejecuta un paso de inicialización sin dejar que un error corte el resto de la carga.
+async function pasoInit(nombre, fn) {
+  try {
+    await fn();
+  } catch (e) {
+    console.error(`Error en inicialización (${nombre}):`, e);
+    const banner = document.getElementById('error-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.textContent = `⚠️ Error al cargar "${nombre}": ${e && e.message ? e.message : e}. Abrí la consola del navegador (F12) para más detalle y recargá la página.`;
+    }
+  }
+}
+
+async function initApp() {
+  await pasoInit('Listas', async () => { await loadLists(); renderListasUI(); });
+  actualizarBannerUsuario();
+  if (!localStorage.getItem('varzan_usuario_actual')) {
+    mostrarSelectorUsuario(true);
+  }
+  await pasoInit('Parámetros', loadParams);
+  await pasoInit('Base de Clientes', loadClientesBaseFromStorage);
+  await pasoInit('Actualización de Documentos', async () => {
+    await loadDocClientsFromStorage();
+    renderDocTable();
+  });
+  await pasoInit('Líneas de Crédito', async () => {
+    await loadLineaClientsFromStorage();
+    renderLineasTable();
+  });
+  await pasoInit('Nuevas Solicitudes / Tiempos', loadCarpetasFromStorage);
+  actualizarPendientes();
+  (function initMesGestion() {
+    const now = new Date();
+    const mesVal = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const mesInputAsig = document.getElementById('asig-mes');
+    if (mesInputAsig && !mesInputAsig.value) mesInputAsig.value = mesVal;
+  })();
+}
+initApp();
+</script>
+</body>
+</html>
