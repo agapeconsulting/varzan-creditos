@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de Indicadores y Comisiones — Analista de Créditos | Varzan Hnos. S.A.</title>
+<style>
+  :root {
+    --azul: #1565C0;
+    --azul-claro: #E3F2FD;
+    --verde: #2E7D32;
+    --verde-claro: #E8F5E9;
+    --amarillo: #F9A825;
+    --amarillo-claro: #FFFDE7;
+    --rojo: #C62828;
+    --rojo-claro: #FFEBEE;
+    --gris: #455A64;
+    --gris-claro: #ECEFF1;
+    --blanco: #FFFFFF;
+    --borde: #B0BEC5;
+    --header-bg: #1565C0;
+    --header-text: #FFFFFF;
+    --subheader-bg: #1976D2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F7FA; color: #263238; font-size: 13px; }
+
+  .top-banner {
+    background: var(--header-bg); color: var(--header-text);
+    padding: 12px 32px; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  .top-banner .logo-wrap { background:#fff; border-radius:6px; padding:4px 8px; display:flex; align-items:center; flex-shrink:0; }
+  .top-banner .logo-wrap img { height:48px; display:block; }
+  .top-banner .divider { width:1px; height:44px; background:rgba(255,255,255,.3); flex-shrink:0; }
+  .top-banner .banner-title { flex:1; min-width:0; }
+  .top-banner h1 { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
+  .top-banner p  { font-size: 12px; opacity: .85; margin-top: 2px; }
+
+  #error-banner {
+    display:none; background: var(--rojo-claro); color: var(--rojo); border-bottom: 1px solid var(--rojo);
+    padding: 8px 32px; font-size: 12.5px; font-weight: 600;
+  }
+  #stale-banner {
+    display:none; background: var(--amarillo-claro); color:#7A4E00; border-bottom: 1px solid var(--amarillo);
+    padding: 8px 32px; font-size: 12.5px; font-weight: 600;
+  }
+
+  .content { padding: 22px 28px 40px; max-width: 1180px; margin: 0 auto; }
+
+  .card {
+    background: var(--blanco); border: 1px solid var(--borde); border-radius: 8px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .card-head {
+    background: var(--gris-claro); padding: 10px 16px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom: 1px solid var(--borde); cursor: default;
+  }
+  .card-head h2 { font-size: 14px; color: var(--gris); font-weight: 700; }
+  .card-head .hint { font-size: 11px; color: #78909C; font-weight: 400; margin-top:2px; }
+  .card-body { padding: 16px; }
+  .card-body.collapsed { display:none; }
+
+  .toggle-btn {
+    background: none; border: 1px solid var(--borde); border-radius: 5px; color: var(--gris);
+    font-size: 11.5px; font-weight: 600; padding: 5px 10px; cursor: pointer; font-family: inherit;
+  }
+  .toggle-btn:hover { background: var(--gris-claro); }
+
+  .controls-row { display:flex; flex-wrap:wrap; gap: 14px; align-items: flex-end; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size: 11px; font-weight:700; color: var(--gris); text-transform:uppercase; letter-spacing:.3px; }
+  .field select, .field input[type=text], .field input[type=number] {
+    border: 1px solid var(--borde); border-radius: 5px; padding: 7px 10px; font-size: 13px; font-family: inherit;
+    min-width: 150px; background:#fff;
+  }
+  .btn {
+    background: var(--azul); color:#fff; border:none; border-radius:6px; padding: 8px 16px;
+    font-size: 12.5px; font-weight: 700; cursor:pointer; font-family: inherit;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover { background: #0D47A1; }
+  .btn.secondary { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
+  .btn.secondary:hover { background: var(--azul-claro); }
+  .btn.small { padding: 5px 10px; font-size: 11.5px; }
+  .btn.danger { background: var(--rojo); }
+  .btn.danger:hover { background: #8E1B1B; }
+  .btn:disabled { opacity:.55; cursor:not-allowed; }
+
+  #status-msg { font-size: 12px; font-weight:600; margin-left: 6px; }
+
+  table.tbl { width:100%; border-collapse: collapse; font-size: 12.5px; }
+  table.tbl th { background: var(--subheader-bg); color:#fff; padding: 8px 10px; text-align:left; font-weight:700; white-space:nowrap; }
+  table.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--gris-claro); vertical-align: middle; }
+  table.tbl tr:hover td { background: #FAFBFC; }
+  table.tbl td.num { text-align:center; }
+  table.tbl tfoot td { font-weight:800; background: var(--azul-claro); border-top: 2px solid var(--azul); }
+
+  .badge-score { display:inline-block; min-width: 34px; text-align:center; padding: 3px 8px; border-radius: 12px; font-weight:800; color:#fff; }
+  .badge-score.nivel-alto { background: var(--verde); }
+  .badge-score.nivel-medio-alto { background: #558B2F; }
+  .badge-score.nivel-medio { background: var(--amarillo); color:#5D4000; }
+  .badge-score.nivel-bajo { background: var(--rojo); }
+
+  .result-summary { display:flex; gap: 16px; flex-wrap:wrap; margin-top: 16px; }
+  .result-box {
+    flex: 1; min-width: 200px; border: 1px solid var(--borde); border-radius: 8px; padding: 16px;
+    text-align:center; background: var(--gris-claro);
+  }
+  .result-box.highlight { background: var(--azul); color:#fff; border-color: var(--azul); }
+  .result-box .label { font-size: 11px; text-transform:uppercase; font-weight:700; letter-spacing:.4px; opacity:.85; }
+  .result-box .value { font-size: 26px; font-weight: 800; margin-top: 6px; }
+  .result-box .sub { font-size: 11.5px; margin-top: 4px; opacity:.85; }
+
+  .calif-EXCELENTE { color: var(--verde); }
+  .calif-BUENO { color: #558B2F; }
+  .calif-REGULAR { color: var(--amarillo); }
+  .calif-INSUFICIENTE { color: var(--rojo); }
+  .result-box.highlight .calif-EXCELENTE,
+  .result-box.highlight .calif-BUENO,
+  .result-box.highlight .calif-REGULAR,
+  .result-box.highlight .calif-INSUFICIENTE { color: #fff; }
+
+  .detail-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 12px; }
+  .detail-card { border:1px solid var(--borde); border-radius:6px; padding: 10px 12px; }
+  .detail-card h3 { font-size: 12px; color: var(--azul); margin-bottom: 6px; }
+  .detail-card .kv { display:flex; justify-content:space-between; font-size:12px; padding: 2px 0; }
+  .detail-card .kv b { color: var(--gris); }
+
+  .params-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 16px; }
+  .param-block { border:1px solid var(--borde); border-radius:6px; padding: 12px; }
+  .param-block h3 { font-size: 12.5px; color: var(--azul); margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center; }
+  .param-block h3 .peso-input { width: 60px; text-align:center; }
+  .scale-row { display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 5px; align-items:center; }
+  .scale-row input { width:100%; border:1px solid var(--borde); border-radius:4px; padding:5px 6px; font-size:12px; font-family:inherit; }
+  .scale-row span { font-size: 11px; color:#78909C; }
+
+  .comision-row { display:grid; grid-template-columns: 1fr 1fr 1.3fr 1fr; gap: 6px; margin-bottom:6px; align-items:center; }
+  .comision-row input { width:100%; border:1px solid var(--borde); border-radius:4px; padding:5px 6px; font-size:12px; font-family:inherit; }
+
+  .analistas-manage { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+  .analista-chip { background: var(--azul-claro); color: var(--azul); border-radius: 14px; padding: 4px 10px 4px 12px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .analista-chip button { background:none; border:none; color: var(--azul); cursor:pointer; font-size:13px; line-height:1; }
+
+  .kpi-info { display:inline-block; margin-left:6px; color:#78909C; border:1px solid #B0BEC5; border-radius:50%; width:15px; height:15px; text-align:center; line-height:14px; font-size:10.5px; font-weight:700; cursor:help; }
+  .kpi-info:hover { background: var(--azul-claro); color: var(--azul); border-color: var(--azul); }
+
+  footer { text-align:center; font-size: 11px; color: #90A4AE; padding: 20px 0 10px; }
+  .lock-note { font-size: 11px; color: #78909C; margin-top: 8px; }
+
+  @media (max-width: 720px) {
+    .content { padding: 16px; }
+    table.tbl { font-size: 11.5px; }
+  }
+  .meta-derivada { font-size:11px; color:var(--azul); background:var(--azul-claro); border-radius:4px; padding:4px 8px; margin:6px 0 4px; }
+</style>
+</head>
+<body>
+
+<div class="top-banner">
+  <div class="logo-wrap"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCACMAfgDACIAAREBAhEB/9sAQwAIBgYHBgUIBwcHCQkICgwUDQwLCwwZEhMPFB0aHx4dGhwcICQuJyAiLCMcHCg3KSwwMTQ0NB8nOT04MjwuMzQy/9sAQwEJCQkMCwwYDQ0YMiEcITIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIy/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMAAAERAhEAPwD3+iiigAooooAKKY7qiFnYKB1JOKEkWVA8bKynoQcg0CH0UVDHdQTO8cUyO6HDqrAlfrQMmooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAE70hIAJPQVFd3UNlbSXFxIscUa5ZieledL8WbV9dFubbGnE7fOP3vrj0q4U5T+FEymo7nM+O/HFxq95Np9k7x2MTFCVODIR1/Cl8C+OpdDnSwv5C9gxwGPWP/AOtW3438DRXtu2uaEqsGXfJFH0Yf3lrySeXy8p/F39q9WlCjOjynJNzU7ntPjz4kW+lWYs9HmjnvZVyXU5Eanv8AWvINI8Sano+rnUra4fz2bdKCeJPrWQeck11ngjwTc+LL7c4aLToiPNlx97/ZWudU4U46m92z3rwzrsXiPQbbUolK+YMMp/hYdRWvXm3iTxxpvgWC30bRbeKaWLG+MH5UHuf71dT4V8W2HirT/PtjsmXiWFj8yH/CuKUH8SWhqn0N8kAEk8CseHxXoc92LSPUoGnZtoTdzn0rZ6ivB/HulS+HvF/2yD5Y5mE8RHZs8iroUlUlytkVJuCue8UySRYo2kkYKijLE9hWd4e1WPWtCtb6Mg+Yg3D0buKxfiPq/wDZXhSZY32zXJ8pPX3/AEqFB8/IU5K1zXsfE+i6jdra2eowzTNnCIcnirWo6vYaREst/dR26MdqlzjJrzT4RaNl7rV5F6fuoif1rJ+KWtG/8QLYRt+5tF592NdH1ZOr7NMy9r7nMz2ezvbe/tkubSZJYX+66nINSu6xozsQFUZJPavM/hHq/mWdzpUj5aI+ZGD/AHT1r0W//wCQdc/9cm/lWFak6c3E0hPmjcyf+E28ODg6vbf99U+Lxj4emcJHq1qWPQF8V4P4d0KXxFq4sIZVidlZtzDjiupvvhNq1tavNDcwTsgz5YGCa65YWlFpSkY+2k9ke0RyJKgeNg6HoQcisafxf4ft5nhl1S3SRDtZS3Q15x8MPEdzBq39i3MjvDKD5YY/cYdquan8Kb6+1W6ukv4VWaVnAKnjJrN4eMZ8tR2RXtW43ijuP+E28Of9Be2/76o/4Tbw5/0F7b/vqvMdT+GM+kafNe3WqW6xRLk/KefauR0bSLnW9ThsbVMvIeT2UdzWscJSkrxkQ68k7NH0vFNHPCksTBo3G5WHcUy7vLextXubqVYoUGWdjwKbYW32Owt7bO7yo1TPrgV558W9aMNlbaTE3Mx3yf7o6Vxwp89TlRvKXLG7O+03V7DV4mksLqOdEO1ihzg1erw/4W6udP8AERs3fEV2uMdtw6GvcKrEUfZT5RU586uY934p0SxvGtLnUYIp1OGRm5BrWR1kRXRgysMgjvXz38QB/wAV1qv++n/oC133wy8W/brX+xrx/wDSIV/csf419PwrWeFapKoiI1rz5Weg3l7b2Fq9zdSrFCgyzt0FVdN13TdXLiwvI5yn3th6Vk/EH/kSNS/3B/OuN+Df+v1T/dSs4UVKk532KlUtNRPWaztT13TNHaNdQvIrcyfd3nGa0q8j+MY/0vSv9yT/ANlqKNP2k1HuVOXLG56ra3cF7bR3FtIskMgyrqeCKjv9RtNLtTc3s6QwggF3PHNY/gb/AJEzTP8ArlWb8Uv+RLlz/wA9U/nR7P8AecnmHN7vMdHaa7pl/aTXVreRSwwgmR1PC1FYeJdG1O4+z2WoQTSkZ2K3NeceAv8AkRPEP/XN/wD0E151pt9Ppl9BeWzbZoWDKf6V1RwalKUU9jJ17JM+oqzdS1/S9IkSO/vYrd3GVDnGRUPhvXYPEOjw30J+YjEi/wB1u4rzX4w/8hfT/wDrg3/oVc9Ok5VPZs0nO0eZHrltdQ3lulxbyLJE4yrL0IqvqGsafpSB767igB6b25Nc1p2tRaB8NbW/lwSluAi/3m7CvL7HT9a8f63JIz7j955G+5GPQVcMNzSd3ZImVWyVtz2S18aeHr2URQ6pAXJwAxxn863gwYAqcg9xXimtfCzUNMsHu7a5S68sbmQLhvwrV+Gfi+eS5Gi30pdSP3Dv1H+zVzw0XHmpu9hRqu9pI9UkkSFC8jqiKMkk4ArBm8c+G4JfLfVYC2cfKciuI+LOt3Ud3BpELskLR+ZJtON3PSqOmfCi8vdNiupb+OF5UDqgXOARxmlTw8XDnqOyYSqu9oo9asNVsNUi82yu4p07lGzirleHaX4b8UeHPFiW1jGWf7xkGfLdfevb49xjXfgPj5setZVqSpv3XdMunNy3Q+k7UVzfjnWJdE8L3FzbnExwiH0J71lFOTsi27K5d1HxRoulP5d5qEEcg6puyaTT/FOiapII7PUYJJD0Tdg14z4X8GXvi83F2bpYkV8NI3zMzVY1/wCHureHRHd2shukDgBoVO9T24rteFpp8rl7xz+2k9UtD3YUVh+Exqw0GBdZUC6A9cnb2z71uVxSjyux0J3VyKeeK1gead1jiQZZm6AVU03W9N1cP/Z95FcbPvbDnFch8VdZFloCafG+JrtsED+4OtcD8OtY/snxVCjvtguv3Tj0P8NdNLDOdNz7GU6qjLlPfqKQHilrlNgooooAKKKKACiiigBKjlljhjaSV1RF5LMcAU9iFUk9BXhXjrxlca3fy2Vs7x2MLlNoOPMI7mtaNGVWXKiJzUFdnffEPT77W/DiPpcolhQ+ZIiHPmL/AFrw4ggkEYPTBrtPA/jiXQJlsrxmk092xzz5fv8ASmfEhtAGrwy6VKhmmXfMsf3B6H616VBOhL2clo+pyz/eLmRQ0nxtq+i6RcafbSBo3XCb+fL+lcXIztIzSZLsckmtGp7C2sbjU7ddQd47YuPMZOuK2qUVrKJMKnRmXDD5hyfu112j+M9V0HR59Ps3Xy5B8hPWM9yKtePIPDVle2sehyguYx5iRnKAdjn1rlKVKEKsNUOc5RloZ80kks7yTMWkY7mY9Sa7/wCFGi6rP4gXU7bdFZRZWWQ9JP8AZHrXL6fa2Vxqlut+7R2xceYy9cV6b4s8dad4a0iPRfDXlmUx43x9Ix/jXNXi4e4lua05KWp6fFd208rxwzxySRnDqrglfrXK/EjQzq/hmSWJN1xanzV+ncV4NpWv6jo+rDUra4fz92XyeH+tfR/hrW4fFHhuG+Ee0TKVkQ9j0NcjhKjJTRq2pqxwPwl11Uln0WVsbv3sIPr/ABCsv4oaq+p+Jk0+E7ktgEAH99qyNYgn8H+NneEYMMnmxe6mrHg2ym8TeOUuJ13Irm4mJ7eg/Ou/2cef2/SxyuT5fZnqenRw+DvAgeXCmCDzH92P/wBevLPCGkP4t8WyTXXzRLummz0Oegrrvi3raxWdvo8TjdKfMlA7KOlefaLrutaCkn9mh0EvLHyd2f0qMPCcoyqLdlVGk1Hoi7p8s3g7x4FYlUhm8t/9pDXvF44k0qd1OVaFiD/wGvnDWNQ1DVrw3uoKxmICl/L2ivZPBet/2x4HkWRszW8TRP8AgvBqcZTbhGb3HRmk3E8u8D6xZ6F4lW+vnZYFRlJVc8mvRtS+K2iR2UhsfOnuCCFUxlRn3zXmPhTQU8R66unvKYlZWbcoz0p3inw3L4Y1gW0uZYTho3xjeO9bVKNKpNcz1IjOcU7bG58NdNuNS8Xf2kVxHAWd27bm7V7czBFLMQFAySawfB0ulT+HreXSokiiI+ZV6hu+a5X4l+MPsULaNZP++kX984P3B6VxVuavV5Yq1tDenanC7OX8f+K28QamNPsXLWcT7V2/8tGr0DwF4RXw9ponuFzfTjL5/gH92uX+GXhAyMut30XyD/j3Rh1/2q9Zq681Tj7GHzJpxcnzyEkdY42djhVGSa8B1Cebxp47Kpny5ZvLT2Re9eqfELWxo/hiUI2J7n90g/nXiWkahqOlXYvNPVhKBtD+XuqsFTdnMK8tom34w0l/CfitJLTKRHbNDj26ivb9G1BNV0e1vUORNGGP1718/wCta5rWvLGdRDv5Wdp8rbj9K9B+EmuGW1uNHmbmL95Fn+6eoq8TSnKipS3RFKaU7LZnIeMY1l+Jl5G4yrzxKR7bVpPEej3fgrxHFc2xIhJ8yCT/ANlp/iz/AJKhc/8AXzF/6Cteu+J/D8PiPQXtHAEoXdE/dWput7OFO+zQuTmlK25zuta9D4i+F95exkb/ACwsqf3WyM1jfBz/AF+qfRP61wQur7RF1HSpMqsw8qWM+oPBrvfg3/r9U/3UpzpezoztswjPmqK/Q9ZryX4yf8felc/wyf0r1o15J8ZP+PvSv9yT+lcWE/jI6K3wMyNI+JmoaPpVvYRWkDpCu0Ficmq/iH4hX3iLSn0+e2ijRmDZTOeK9D8IeGNFvPCmn3FxpsEkrxZZ2Xkms/4ieHtI07wnJcWlhBDMJUG9V5611+0oe1ty63MFGpyb6GT4D/5EPxD/ANc3/wDQDXL+DNAj8RvqVmeJVtQ8LejZrqPAX/IieIf+ub/+gmqnwe/5GG8/69R/6FWjk4upJE2vyoz/AAd4guPCPiJ7K9DJbu/lzp/dPTdWr8XZFl1TTZEIZGgJBHfmtP4oeE/NiOuWafOgxOoHUf3q8zvtWuNRtLOCdt32VCiMepXOaKUY1ZRrR36hO8E4M7DxbcOvgLw7bg4R1LMPXArtfhbZxQeD4rhVHmXEjM5+hx/SuX8TaW938MtGvYwW+yqNwH908ZrV+FOvQvpTaPK6rLCxaNSfvKeayqa0JW7lw+NXPSSAQQRkGvANfj/sL4iyG2+XZdK6gdtx6frXu1/f2+mWUl1dSrHFGu4lq8Islk8YeP1mCHy5rjzGB/hQHNZYK/M30sXiNkup3nxH8IXetiHUtPTzJ4o9rRjqy+1cZo3jvXfDZFnco0sUfy+VOCGX2r2PUvEOlaNJFDfXkcUkhCqpPNN1PQtJ1+2/0q2imDD5ZF6/gaVOulHkqRuglTd7xepmeGvHWl+IyIVb7Pd45hk7/Q966qvnnxRpI8JeJhFZXJby8SxtnlfY173ps7XOmWs7/fkiVj9SKjEUYxSnDZlUpttxZbrG8U6GPEGgz2G4K7fMhPZh0rZqte39tp1s1xdzJFEvVmOK54tppo1aTVmeCwzeJPAeouuySEE8hhmOT3zXeaB8VbO9kS31aH7M7cCUcp+PpXZWl5pPiXT98LQ3du3BBGf0rzL4i+DNN0WzXU9PPlB5NjQk8HPpXeqlOu+WorM5nGVNXi9D1+KVJ4lkjYMjDKsOhpxIAyegrhPhVfz3fhl4ZSWFvKUQn061u+MtZXRPDN1c5/eMvlxj1Y1yTpONTkN4zTjzHkfi69l8UeODbQfMokFvFj68mk8ceGz4Y1S1ktsiKSNSrf7a9a5/Tr2+sb9L+zVzOjZDhN2DWhrPiLXddt0h1EPIkbbl/ckY/SvXjCcOWK2W5wtqV29z3Lwrq6634dtLwHLlMP8A7w61tV5L8I9a2XFzo8r/AHx5sQP6ivWq8rEU/Z1GjtpT5opi0UUVgaBRRRQAUUUUAJXmfj7wALwSarpUQE45lhUff9x716ZXm3xD+IaaOj6Vpbh71hiSQHiL/wCvWtCc4zvAipFSWp4xcS+VlOjjgg9qpE5JNOdmdy7ElmOST3NSQwmQ5P3a9VylNnMkoo39C8NavrenXF5a2zPbwD75/iPoPWsi4l8rKfx9MeldHpHi/VtD0m50+zlAilHyZ/5ZnuRXISM7SM0hJcnLE+tPmqQumSoxlqhCSTk9a6TQvDWr61p1xeWtszwQD7x/j9h61gQw7zuPC11ek+MdX0XSLjT7KUCOQfJn/ln6kVKVRLmgVJx2ZzlxKYiU6OOo9KokknJOTT5Wd5WeQkuxySe9Pgh8w7j92nKTm7BFKKOr8DeBbrxReLPMrR6dG3zyf3v9kV9BWFjbabZx2lpEscMYwqgV4j4J8cS+G3FpdAyae3O0dUPqK9A/4Wp4e9bj/v3XFiKVXmta6NadSFit8TfC8+sWlvfWEDS3UJ2siDllNS/DPw9Po2lXFxe27w3Uz42MOQoqT/havh31uP8Av2aP+FqeHfW4/wC/dJOv7L2fK7B7nNz3OL1vw/r3iLxm80um3CW0kwQSMvCxjvXsdrZwWtrFAkahY1CjiuQ/4Wp4d9bj/v3R/wALU8O+tx/37oqe2lFR5bJCj7NNu5ueKtETWvDl3ZpGvmlN0WB/EOleeeA9O1/SLu8tbrTLmO3uYWG4rwGA4rp/+Fq+HvW4/wC/VH/C1fDv964/79miHtowcHFtMJcjd0zlPh54d1jTvFiXF5p88MIjcb3XArv/ABl4bj8R6LJCqgXUYLQt7+lZf/C1PDvrcf8Afqj/AIWp4e9bj/v0aKjrTmpqOwR5Ipq5zfw/g8Q+H9VNtdaXdCyuDhjt4U/3q57xB4W8QXXiC/nTTLqRHnYo+3qM16L/AMLU8O+tx/36o/4Wp4d9bj/v3WqqVVPn5NSeSLjy8x53FYePYY1jiXVkRRhVViAKf9k+IH/UY/77Neg/8LV8O+tx/wB+6P8Ahavh31uP+/VN1an/AD7EoR/mOU8a6d4i1mXT7ePTrqWOC3QM5XOXI5r0jwxokWi+HrSzMY8xUBkyP4jyawv+FqeHfW4/790f8LU8O+tx/wB+6xm6socqjZFx5FLmbOvurOC6tZbd41KyKVIxXjmg6D4g8OeMkmj024e2SUxs6rwyE9a7T/hanh3+9cf9+6P+FqeHfW4/79mlT9tBNcrdwnySaaZyHiTw5rN18Qpr2HTp3tmnjYSBeMALn+VeyoMIox2rif8Ahanh31uP+/VH/C1PDvrcf9+qKiqzjGPLsOPJFt3M/wCI/gyTUwmqaZbl7sfLKiDlx60z4WaLqWkzagb+zltxIF2eYuM1p/8AC1PDvrcf9+qP+FqeHf71x/37qlKt7L2biS1Dm57ncV5n8U9F1LVbnTmsLKW4WNXDGMZx0/wrU/4Wr4d9bj/v3R/wtTw763H/AH6rOnTq05KSjsaTlCStc3PB9tNZ+FNPt7mJopkiwyMOQaz/AIiWF3qXhOS3s4HnmMiHYgyetU/+FqeHfW4/790f8LU8Petx/wB+6PZ1efn5Rc0OXluZPgzRNTsvBut211ZSxTzIwjRhy3y9qrfC3QdV0rXLua/sJreNrcKGkXGTmt8fFTw763H/AH6o/wCFqeHfW4/79GtXOs+b3dyFGCtrsdpLEk8LxSKGRxhlPcV4b4n8A6pY61KumWM1xaOd0ZjXO32rvv8Ahanh31uP+/Zo/wCFqeHfW4/79VFH21J3USqnJNbmz4e04/8ACHWmn38G3MGyWNxXmHiD4d6vo9+1zo6yTwbtyGI4dPau2PxU8O+tx/36NH/C1PDv964/79VUHXhJyUdxSVNpJs82/sfxlrzpb3EN/KgOP35IVfzr1LwT4Li8M2zSzFZL6UfO46KPQVW/4Wp4d9bj/v1R/wALV8O+tx/36qqk6048sYWQoxgndyKXjj4eya1ctqWmuBcsP3kbnhvp6Vwiad420n/RoY9TiToFjLEfhXpH/C1PDvrcf9+6P+FqeHfW4/790U51oR5XC6CUYN3Uji9A+Hus6vqK3espJFDu3OZmy7+1b/h228Xw+NHF79oFgrMDuP7vb/DtrV/4Wp4d9bj/AL90f8LU8O/3rj/v2ac6lWWjhoJRgvtHcVgeLPDEHijS/s8jmOVDuicdjWN/wtXw7/euP+/dH/C1PDvrc/8AfuuWNKrF3SZs5was2edz+EfFnh66ZrOK5/662rHB/Kkj8N+L/EUyJdx3jqD9+5YhV/OvRf8Ahanh31uP+/VH/C1PDo73H/fuuz21Xfk1MOSH82hzeseHfEvh+302x0Fp2hC7pWg/ilzzu9ql8f2fiLV4dNso9PnnWKIPM8a8GQjFb/8AwtTw963H/fuj/hanh31uP+/VZqVW6k4aoq0LNKRo+CNC/sXwzbwXEQW4f55QRyCe1dE8EToyGNcMMHiuM/4Wr4d9bj/v1R/wtXw763H/AH7rGcK0pOTTLi6aVjiD4a13QfGn2uw064kghn3I0a8FT1H5Gug0pfGbeOxJcC4WwZyXDH93s7fjWv8A8LU8O+tx/wB+qlt/id4fuLmKFXnDSMFBMfFbynUkvehfQhRinpI7SikByAaWuA6QooooAKKKKAGsNykHvXzp4+8H3fh7V5rkB5bK4cukp5257Gvoyobu0t763e3uoUmhbhkcZBrSnU5HcmSufPXgXwLceKbtbicNFpsbfPJ/f9hWj8RofD2narBaaSFSaNdsyx/dXHT8a734g6vceEfC8UGjWiwxSZi3oMLEK8Bd2kkZ3Ys7HJY9TXZRqSlLn6GU4q3KaNT2EFhLqcH9ol1td480p121d0DwrrGtabPeW1uWt4RkM38Z9F9axbiUwkp0ccEeleg5wnE5eWUZaHY+PD4at722j0Qjd5Y8wR/cHHH41ynaswnJ966jQfCus61pk97bW5aCEcE/x+w9ayo1FBcsmXUhfVFHT4LGXU7b+0Cwtt48wp1xXpvivwDZ3mmR6r4cVNqxgmKPo6+o968sZWRijKQynBB7V3/wy8Q6hb6smjqDNaS87T/yz9xTrwkv3lN7CpyT92RwDKUYqwIYHBB7UlfR1x4P8P3c7zz6VbvK5yzY6mo/+EH8M/8AQHt/yNZLMIdUV9Wl0PnWivor/hBvDX/QHt/yNH/CDeGv+gPbfkaf9o0+zD6tLufOv4UV9Ff8IN4Z/wCgPb/kaP8AhBvDP/QHt/yNH9oU+zD6tLufOtFfRX/CDeGv+gPb/kaP+EG8M/8AQHt/yNH9oU+zD6tLufOtFfRX/CD+Gv8AoD2/5Gj/AIQfwz/0B7f8jS/tCn2D6tLufOtHevor/hBvDP8A0B7f8jR/wg3hn/oD2/5Gn/aFPsw+rS7nzrRivor/AIQbwz/0B7f8jR/wg3hn/oEW/wCRo/tCn2YfVpHzrRX0V/wg3hr/AKA9v+Ro/wCEH8Nf9Ae3/I0f2hT7MPq0j51xR+FfRX/CDeGv+gPb/kaP+EH8Nf8AQHtvyNH9o0+zD6tLufOtFfRX/CD+Gf8AoEW/5Gk/4Qbwz/0B7f8AI0f2hT7MPq0u587UV9E/8IP4Z/6A9v8AkaP+EH8Mn/mD2/5Gj+0KfYPq0u587fhRX0V/wg/hn/oD2/5Gj/hB/DP/AEB7f8jR/aNPsH1aXc+daK+iv+EH8M/9Ae3/ACNH/CD+Gf8AoD2/5Gj+0afYPq0u5860V9Ff8IN4Z/6A9v8AkaP+EG8Nf9Ae3/I0f2hT7MPq0u5860V9Ff8ACD+Gv+gPbfkaT/hBvDP/AEB7f8jR/aFPsw+rS7nztRX0V/wg/hn/AKA9v+Ro/wCEH8M/9Ae3/I0f2jT7B9Wl3PnWivon/hBvDX/QHt/yNL/wg3hr/oD235Gj+0afZh9Wl3PnWivor/hBvDX/AEB7f8jR/wAIN4a/6A9v+Ro/tGn2YfVpHzrRX0V/wg/hn/oD2/5Gj/hB/DP/AEB7f8jR/aNPsH1aXc+daK+iv+EG8Nf9Ae3/ACNH/CDeGv8AoD235Gj+0afZh9Wl3PnWivor/hBvDX/QHt/yNH/CDeGv+gPb/kaP7Rp9mH1aXc+daK+iv+EG8M/9Ae3/ACNH/CD+Gf8AoD2/5Gj+0afYPq0j51or6K/4Qfwz/wBAe3/I0f8ACD+Gf+gPb/kaP7Rp9g+rSPnWpbUFryALyfMX+dfQv/CD+Gf+gPb/AJGnReDPDsEqSxaTbrIhyrAHg0nmFO2wfVpG1b8W8Y/2R/KpaB0oryW7u52JWQUUUUhhRRRQAUUUUAVNR0621Wxls7yISQSrtZTXlSfBor4hBa7DaTndj+P/AHf/AK9ewU1gCpHY8VcKko7CaTPKvG/jm18PWA8P+H/LWVV8t3j6RD0+teMszOzMxLMTkk12fj7wVd+HdUmu4w81hO5dZeu0nsad4D8Bz+Jrpbq7Ro9MQ/M3TzPYV2U+WMOa5lK7djj4IfM+Y/drvfBHjSXw3cC1uC0mnSN8y/8APM+orrvGnw5gltFvNDgEU0SbWhXo6j+teX6dpF7qmoiwtoXacnDDH3frXXT9lVpswnzxkep+J/Adt4mEWraFLEkk2C5/hYev1rpfCfhCz8MWmExLdyD97MRyfYe1W/DOijw/oVvYby7IMux7setbNebUrTt7NPQ6I01fntqFLRRXOahRRRQAUUUUAFFFFAGH4p1tvD2jPfpEJWDqm0nHU4rN8VeMJfD1pYzRWYna5GSpbG3jNR/Ez/kTpf8ArtH/AOhCs3xlAtzd+F4HGVkk2EfVcV0UoRla/cxnJq9jsE1eN/Do1baNn2fztufbOKw/CHjKXxMl60loIPs4BADZzmufg1N4/hbPZlj58cpssd87sCrvg23W01rxDbKAFjVFx/wCq9jFRk+wudtom0zxj4g1e3kurLQo5YEkZM+dg8e1bOl+LrO/0+9uJka2mssi4hc8oRXLeAfEekaT4euIr2+ihlFzI2xjzjPpWHqMs02leJNaiieK0vZkjiJG3eufvVTpRcnG1vMXO0r3Ot/4TDXvsX9sf2Mn9lfe/wBZ+82f3sVsa94oXTPDCa1axCdZNmxS2PvVZa1T/hD/ALLgbfse3/x2vOri4ab4NQ+Yf9XOEyfQPUKEZPRbMpyaW/Q6yXxdq+mwLd6tonlWZwWlhk3bQe5FJq/ivWdPt5r+HSYZtNUBkm87llIHOKzvEXirTdY8Otoulu93e3MaoqRofl6da0PEVm+n/C97SXmSK2VG+tPkirXXWwlJ9y/oOta5qbwy3elRQWcqbxKsuT7cVQ0jx0+peKW0prPZblpEjn3feK1q2FyLTwNBck48uzDZ/wCA1wttbnTNF8M6uRhnvGaQ+0hojCEpPQbk0lqdx4p8Q3WiPYRWlotzNdymNVZtvNVIPF1za38FnrmmPZGdtscobchPpmofGZzrXhojvd/0p/xKhD+D5pgMSQSxyI3cHcKiMY2imtxtvXyNLxH4hGiw28cEP2i8uX2QQg43H1rOsfFGp22s22m69YR27XWfIlibKk/3TWM1wdQ8feGlkOVSyM2D6kVpfEVfLg0e6XiSK/QKR71Spxi1F9Rczd2WNZ8VahZ+Jo9F07To7mV4vMBaTbU2neLJG1iLSdXsHsbyYZi+bcr/AENc9rOpWmlfFO1u72YQwrZkFz61JJdp4w8b6TdaWjtZ6cWaW4K4BOOgp+yjZadNw53fc2/GHi5/DJtUhtftMs24lc4wo6muhsLtb/T7e7XhZYw+PTNcVqFuuu+PruBuY7PT2T/gTjFaXw7uvP8ACcMDNl7V2hbPbBqJU4qmmtxqbc7GrrV5q9qI/wCy9Pju85375Nu2uc03xd4h1Wa4jt9DhP2eXypcz9D3ruu1cV4C/wCP7xD/ANfzUqai4ttbDlfmSQ6bxVrUuuXmm6dpEU7Wu3ezS7eop154n1vS9PF5qOkRxRCZUfZLuwp/irMs9c03RfHuvNqF0kAk2BS3fiusn+w+KfDsyQSrNa3KMquPWnJRja8dCU276jPEHiCLRdD/ALRRRMX2iJM/fJ6Vz+p+LvEekWBvbvQoUgyBnz+ea57w6L3XdY0/Qr8bodFZmlz/AMtGU4Wus+JX/InS/wDXWP8A9Cq/ZxhJRavcXM5JtDx4i1y30u7v77SYoYoYfNQrNnd7VLqvit9O8IW+ti2DtKIz5e7puqXxL/yIV5/16f0rmfE//JKNP/3YalQjJ7dbFNtHo0T+ZCj4xuUHFSVDbf8AHrF/uD+VTVg9GaJ3VwooopDCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAIri2huoWhuIkljYYKOMg0lvbQ2kCw28SRRKMKiDAFTUUXYhMVWg0+ztppJoLaKOSQ5dlUAt9atUUJtbA0FFFFAwooooAKKKKACiiigAooooA434mf8ifL/wBdo/8A0IVT8T/8hjwh/wBd1/8AQa6fxFocfiHSmsJJmiVnVtyjng5qHUvDceo3WlTtcOh09w6gD7/Het6c1FJMylFts8+uLWQePW0MA+TNqC3hHbaBk10fhz/ka/FX++P/AEGugbw5bt4pTXd585YvL2Y4+tGn+Ho7DVNTvlnd2vzllI4XjtVyqxcbeRKptO5y/wANtMsbrQppp7SCWUXUg3ugJ61qfEOz83wVdJCoAjKvgDsDWr4b8Px+HNOe0imaYNK0m5hjqa07q2ivLWS2mUNHIpVh6g1E6v7y6ehUYe7YyDep/wAIWLvcNv2LdnPH3a8/ubd7b4OQb+PMnEnPoXzXR/8ACCX/ANn/ALNOvTnSN3/HvtG7b/d3elbuteGbbV9ATSBI0ECbdpQdAvSrUoxe+7uS4uSOc8TwJol3oWvQxhFiZYZ9owNjDvWx47dZPBF86nKtGCK1NX0WHV9Dk0yZiEdAu8dRjvUF34eF54X/ALElupCPKEZmxycd6l1E7N9GUotXSOc1+7Nt8LraND+8uYY4EHu1ZmvaT4mj8GCK4k042tpGsiiNGEg29O9ddf8AhOG/0/S7OS5kEVg6vwB+82jjNbV7Zpe6fNZuSElQoT6U1VjHbuS6be5wur3f25fBt1nPmSqxPvtFaXxKnC+EpLcHMtxLHGi9z81EvgXdpGmWMWqTxPp7s8cwUZ5qxZ+DEGoRX2qaldalNCcxibAVT64FDlC6d9h2lqjBntv7M8d+GXk4V7QwZPqBWh8RG85NGsk5kmvkKj6VueIvDsWvWsSmV7e4gfzIZ06o1Z2m+EbldYh1TWdUfUJ7cEQLt2qnvj1pqom1JvYOVq6RlXkSS/Fu0jkRWX7EeGGRU3hpxonjPVtEYbIpv9Kg9Pet+Tw5HJ4si17z3EkcJi8rHB96bq3hqPU9ZstUS4eC4tdy5QffU9jS9qmuV7WDka1OS0Jddv8AW9a1HSZLFUkuDGTcozEhfTBrQ8B+dYatrel3Zj+0JKJiIxhfm9M10nh7QovD+nG0jlaUtI0jOw5JNRw+HooPFE+uRzuHniEbxY4OO9EqsXePSwKD0ZtnpXFeA/8Aj+8Q/wDX+1drWPomgR6LNfyRzPIbyczMGH3Se1ZQklFplyTbRz+hQRTePvEIliR8eXjcue1dFruoRaFoN1doqp5SHYoGMt2rJuvB10+tXepWOuXNk9zjesaKen1qKbwVe3vlR6j4hu7u3SRZDE6KA2PpWjak1d6Eq66HL6bZXfhK/wBI1u7diuofJek9mc5BrqfiUc+DZT/01j/9Crc13RYNc0iXT5WMasBtdRyhHQiq2q+HBq3hyPSLi7k+UJmbAy22m6ilKMmJQaTSIfEv/Ih3n/Xp/SuY8T/8kn0//chrutQ0tdQ0SXTGkZFki8reByKzdT8KRaj4Xh0M3UkaRKgEoAz8tTGcV945Rf4G7bf8e0X+4P5VLXJx+FtZjKAeKr7YuPl8tOnp0rq1BCAE5IHX1rKaSd07lxvaw6iiipKCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q==" alt="Varzan Hnos. S.A."></div>
+  <div class="divider"></div>
+  <div class="banner-title">
+    <h1>Tablero de Indicadores y Comisiones — Analista de Créditos</h1>
+    <p>Cálculo mensual a partir de los datos del CRM de Seguimiento</p>
+  </div>
+</div>
+
+<div id="error-banner"></div>
+<div id="stale-banner"></div>
+
+<div class="content">
+
+  <!-- ══════════ CONTROLES ══════════ -->
+  <div class="card">
+    <div class="card-head"><h2>Selección de Período y Analista</h2></div>
+    <div class="card-body">
+      <div class="controls-row">
+        <div class="field">
+          <label>Analista</label>
+          <select id="sel-analista"></select>
+        </div>
+        <div class="field">
+          <label>Mes</label>
+          <select id="sel-mes"></select>
+        </div>
+        <div class="field">
+          <label>Año</label>
+          <select id="sel-anio"></select>
+        </div>
+        <button class="btn" id="btn-actualizar" onclick="actualizarTodo()">🔄 Actualizar datos del CRM</button>
+        <span id="status-msg"></span>
+      </div>
+      <div class="lock-note" id="last-update-note"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ RESULTADOS ══════════ -->
+  <div class="card">
+    <div class="card-head"><h2>Resultados del Período</h2></div>
+    <div class="card-body">
+      <table class="tbl" id="tabla-resultados">
+        <thead>
+          <tr>
+            <th>#</th><th>Indicador</th><th>Peso</th><th>Meta</th>
+            <th class="num">Resultado Real</th><th class="num">Puntaje (0–100)</th><th class="num">Puntaje Ponderado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-resultados"></tbody>
+        <tfoot>
+          <tr><td colspan="6" style="text-align:right;">PUNTAJE TOTAL DEL PERÍODO</td><td class="num" id="td-puntaje-total">—</td></tr>
+        </tfoot>
+      </table>
+
+      <div class="result-summary">
+        <div class="result-box highlight">
+          <div class="label">Puntaje Total</div>
+          <div class="value" id="box-puntaje-total">—</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Calificación</div>
+          <div class="value" id="box-calificacion">—</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Comisión a Pagar</div>
+          <div class="value" id="box-comision">—</div>
+          <div class="sub" id="box-comision-desc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ KPI REPORTE MENSUAL ══════════ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>KPI — Reporte Mensual <span class="hint">(los 8 indicadores del tablero gerencial, mes a mes)</span></h2>
+    </div>
+    <div class="card-body">
+      <div class="controls-row" style="margin-bottom:12px;">
+        <div class="field">
+          <label>Año</label>
+          <select id="sel-kpi-anio"></select>
+        </div>
+        <button class="btn secondary small" onclick="renderTablaKPI()">🔄 Recalcular</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="tbl" id="tabla-kpi-mensual" style="min-width:1050px;">
+          <thead>
+            <tr>
+              <th>KPI</th>
+              <th class="num">Ene</th><th class="num">Feb</th><th class="num">Mar</th><th class="num">Abr</th>
+              <th class="num">May</th><th class="num">Jun</th><th class="num">Jul</th><th class="num">Ago</th>
+              <th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dic</th>
+              <th class="num">Promedio Anual</th><th class="num">Meta</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-kpi-mensual"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ DETALLE ══════════ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Detalle de Datos Utilizados <span class="hint">(transparencia del cálculo)</span></h2>
+      <button class="toggle-btn" onclick="toggleCard('detalle')">Mostrar / Ocultar</button>
+    </div>
+    <div class="card-body collapsed" id="body-detalle">
+      <div class="detail-grid" id="detalle-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ PARÁMETROS ══════════ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Parámetros de Cálculo <span class="hint">(pesos, escalas de puntaje y comisiones — protegido)</span></h2>
+      <button class="toggle-btn" onclick="toggleParametros()">Editar Parámetros</button>
+    </div>
+    <div class="card-body collapsed" id="body-parametros">
+
+      <h3 style="font-size:13px;color:var(--gris);margin-bottom:10px;">Analistas</h3>
+      <div class="analistas-manage" id="analistas-manage"></div>
+      <div class="controls-row" style="margin-top:10px;">
+        <div class="field"><label>Nueva analista</label><input type="text" id="input-nueva-analista" placeholder="Nombre y apellido"></div>
+        <button class="btn small secondary" onclick="agregarAnalista()">+ Agregar</button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:18px 0;">
+
+      <h3 style="font-size:13px;color:var(--gris);margin-bottom:10px;">Pesos y Escalas de Puntaje por Indicador</h3>
+      <div class="params-grid" id="params-indicadores-grid"></div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:18px 0;">
+
+      <h3 style="font-size:13px;color:var(--gris);margin-bottom:10px;">Metas adicionales (solo para KPI Reporte Mensual)</h3>
+      <div class="controls-row">
+        <div class="field"><label>Meta Tasa de Aprobación (%)</label><input type="number" id="input-meta-aprobacion" min="0" max="100"></div>
+        <div class="field"><label>Meta Índice de Puntaje Global (pts)</label><input type="number" id="input-meta-puntaje-global" min="0" max="100"></div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:18px 0;">
+
+      <h3 style="font-size:13px;color:var(--gris);margin-bottom:10px;">Bandas de Comisión</h3>
+      <div class="comision-row" style="font-weight:700;color:var(--gris);">
+        <span>Puntaje Mín.</span><span>Puntaje Máx.</span><span>Calificación</span><span>Monto Comisión (Gs.)</span>
+      </div>
+      <div id="comision-rows"></div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:18px 0;">
+
+      <div class="controls-row">
+        <button class="btn" onclick="guardarParametros()">💾 Guardar Parámetros</button>
+        <button class="btn secondary" onclick="restaurarParametrosDefault()">↺ Restaurar valores por defecto</button>
+        <button class="btn secondary" onclick="cambiarClaveAcceso()">🔑 Cambiar contraseña</button>
+        <span id="status-params-msg"></span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Tablero de cálculo — consume datos en vivo de la planilla de Seguimiento (CRM) vía Google Sheets. No modifica los registros del CRM.
+  </footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  CONEXIÓN — misma base de datos que el CRM (solo lectura de datos operativos)
+// ═══════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbygm798PzRfLKz-0mmnzQAUATK1-Y7dXR02LipGGOwYke-oy31pTi1e79u-sxMz7NZAUA/exec';
+
+// Idéntica a la usada en el CRM: devuelve un array (o [] si la hoja no tiene datos
+// válidos) y null solo cuando falla la conexión (para distinguir "sin datos" de "error").
+async function apiListar(hoja) {
+  try {
+    const resp = await fetch(`${API_URL}?hoja=${encodeURIComponent(hoja)}`);
+    const json = await resp.json();
+    if (!json.ok) { console.error('apiListar error:', json.error); return []; }
+    return json.data;
+  } catch (e) {
+    console.error('apiListar fallo de red:', hoja, e);
+    return null;
+  }
+}
+
+async function apiReemplazarTodo(hoja, filas) {
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ accion: 'reemplazarTodo', hoja, filas, usuario: 'Tablero de Indicadores' })
+    });
+    return await resp.json();
+  } catch (e) { console.error('apiReemplazarTodo fallo de red:', e); return { ok: false, error: String(e) }; }
+}
+
+function avisarFalloConexion(contexto) {
+  const banner = document.getElementById('error-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.textContent = `⚠️ No se pudo conectar con la planilla compartida (${contexto}). Los datos podrían no estar actualizados. Verificá tu conexión a internet y recargá la página.`;
+  }
+}
+function ocultarBannerError() {
+  const banner = document.getElementById('error-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════
+//  UTILIDADES DE FECHA (mismas convenciones que el CRM)
+// ═══════════════════════════════════════════════
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function mesLabel(mesIdx, anio) { return `${MESES[mesIdx]} ${anio}`; }
+function pct(x) { return x === null || x === undefined || isNaN(x) ? '—' : (x*100).toFixed(1) + '%'; }
+function fmtGs(n) { return 'Gs. ' + Number(n||0).toLocaleString('es-PY'); }
+
+// ═══════════════════════════════════════════════
+//  CONFIGURACIÓN POR DEFECTO (según Tablero_Analista_Creditos_1.xlsx)
+// ═══════════════════════════════════════════════
+function configPorDefecto() {
+  return {
+    claveAcceso: '#12345',
+    analistas: ['Analista Única'],
+    indicadores: {
+      carpetas: {
+        nombre: '1. Solicitud de Crédito',
+        formula: 'Carpetas con resolución coherente con la observación / Carpetas ingresadas',
+        peso: 0.20,
+        tipo: 'directo', // mayor resultado = mejor
+        escala: [
+          { umbral: 0.95, puntaje: 100 },
+          { umbral: 0.90, puntaje: 90 },
+          { umbral: 0.80, puntaje: 75 },
+          { umbral: 0.70, puntaje: 55 },
+          { umbral: 0,    puntaje: 30 }
+        ]
+      },
+      documentos: {
+        nombre: '2. Actualización de Documentos',
+        formula: 'Clientes con documentación actualizada / Clientes programados',
+        peso: 0.25,
+        tipo: 'directo',
+        escala: [
+          { umbral: 0.95, puntaje: 100 },
+          { umbral: 0.85, puntaje: 90 },
+          { umbral: 0.75, puntaje: 70 },
+          { umbral: 0.65, puntaje: 50 },
+          { umbral: 0,    puntaje: 25 }
+        ]
+      },
+      tiempos: {
+        nombre: '3. Tiempo de Respuesta para Aprobación de Créditos',
+        formula: 'Promedio de horas entre solicitud y respuesta (indicador inverso)',
+        peso: 0.30,
+        tipo: 'inverso', // menor resultado = mejor
+        escala: [
+          { umbral: 6,  puntaje: 100 },
+          { umbral: 12, puntaje: 80 },
+          { umbral: 24, puntaje: 60 },
+          { umbral: 48, puntaje: 35 },
+          { umbral: Infinity, puntaje: 10 }
+        ]
+      },
+      lineas: {
+        nombre: '4. Actualización de Líneas de Crédito',
+        formula: 'Clientes revisados / Clientes programados',
+        peso: 0.25,
+        tipo: 'directo',
+        escala: [
+          { umbral: 0.95, puntaje: 100 },
+          { umbral: 0.85, puntaje: 90 },
+          { umbral: 0.75, puntaje: 70 },
+          { umbral: 0.65, puntaje: 50 },
+          { umbral: 0,    puntaje: 25 }
+        ]
+      }
+    },
+    kpiMetas: {
+      aprobacion: 0.70,
+      puntajeGlobal: 75
+    },
+    comisiones: [
+      { min: 90, max: 100, calif: 'EXCELENTE',    monto: 500000 },
+      { min: 75, max: 89,  calif: 'BUENO',         monto: 375000 },
+      { min: 60, max: 74,  calif: 'REGULAR',       monto: 300000 },
+      { min: 0,  max: 59,  calif: 'INSUFICIENTE',  monto: 0 }
+    ]
+  };
+}
+
+let CONFIG = configPorDefecto();
+let paramsUnlocked = false;
+
+// ═══════════════════════════════════════════════
+//  META DERIVADA DE LA ESCALA
+//  La meta de cada indicador NO es un valor fijo: es el umbral de la escala
+//  que otorga el puntaje máximo (100). Al ajustar la escala en "Parámetros de
+//  Cálculo", la columna "Meta" del tablero y del KPI mensual se actualiza sola.
+// ═══════════════════════════════════════════════
+function metaDeIndicador(ind) {
+  if (!ind || !Array.isArray(ind.escala) || !ind.escala.length) return '—';
+  const maxPts = Math.max(...ind.escala.map(b => Number(b.puntaje) || 0));
+  const candidatos = ind.escala.filter(b => (Number(b.puntaje) || 0) === maxPts && b.umbral !== Infinity);
+  if (!candidatos.length) return '—';
+  // Directo: el menor umbral que ya da el máximo. Inverso: el mayor (más laxo) que aún da el máximo.
+  const umbral = ind.tipo === 'inverso'
+    ? Math.max(...candidatos.map(b => b.umbral))
+    : Math.min(...candidatos.map(b => b.umbral));
+  if (ind.tipo === 'inverso') return `≤ ${Number(umbral.toFixed(1))} hs`;
+  return `≥ ${Number((umbral * 100).toFixed(1))}%`;
+}
+
+
+// ═══════════════════════════════════════════════
+//  CARGA / GUARDADO DE PARÁMETROS (hoja "ParametrosIndicadores")
+// ═══════════════════════════════════════════════
+// Reutilizamos la hoja "Parametros" que ya usa el CRM (evita depender de que el
+// backend reconozca una pestaña nueva). Guardamos nuestros datos bajo una clave
+// propia para no pisar las claves del CRM (minClientes, claveAcceso, etc.).
+const CLAVE_CONFIG = 'configIndicadoresComisiones';
+
+async function cargarConfig() {
+  const filas = await apiListar('Parametros');
+  if (filas === null) { avisarFalloConexion('Parametros'); return; }
+  const fila = (filas || []).find(f => f.clave === CLAVE_CONFIG);
+  if (fila && fila.valor) {
+    try {
+      const parsed = JSON.parse(fila.valor);
+      // reponer Infinity que JSON no soporta
+      if (parsed.indicadores && parsed.indicadores.tiempos && parsed.indicadores.tiempos.escala) {
+        parsed.indicadores.tiempos.escala.forEach(e => { if (e.umbral === null || e.umbral === 'Infinity') e.umbral = Infinity; });
+      }
+      CONFIG = Object.assign(configPorDefecto(), parsed);
+      if (parsed.indicadores) {
+        Object.keys(parsed.indicadores).forEach(k => { CONFIG.indicadores[k] = Object.assign({}, CONFIG.indicadores[k], parsed.indicadores[k]); });
+      }
+    } catch (e) { console.error('Config inválida, usando valores por defecto', e); CONFIG = configPorDefecto(); }
+  } else {
+    CONFIG = configPorDefecto();
+  }
+}
+
+async function guardarConfigEnSheet() {
+  // Leemos primero TODAS las filas actuales de "Parametros" para no perder las
+  // claves que ya usa el CRM (minClientes, claveAcceso, etc.) al reemplazar la hoja.
+  const filasActuales = await apiListar('Parametros');
+  if (filasActuales === null) { avisarFalloConexion('Parametros (lectura previa al guardado)'); return false; }
+
+  const serial = JSON.parse(JSON.stringify(CONFIG, (k, v) => v === Infinity ? 'Infinity' : v));
+  const nuevaFila = { clave: CLAVE_CONFIG, valor: JSON.stringify(serial) };
+
+  const filasFinal = (filasActuales || []).filter(f => f.clave !== CLAVE_CONFIG);
+  filasFinal.push(nuevaFila);
+
+  const r = await apiReemplazarTodo('Parametros', filasFinal);
+  if (!r.ok) avisarFalloConexion('Parametros (guardado)');
+  return r.ok;
+}
+
+// ═══════════════════════════════════════════════
+//  DATOS OPERATIVOS DEL CRM (solo lectura)
+// ═══════════════════════════════════════════════
+let dataCarpetas = [];
+let dataDocClients = [];
+let dataLineaClients = [];
+
+async function cargarDatosCRM() {
+  const [carp, docs, lin] = await Promise.all([
+    apiListar('Carpetas'), apiListar('DocClients'), apiListar('LineaClients')
+  ]);
+  if (carp === null) avisarFalloConexion('Carpetas'); else ocultarBannerError();
+  dataCarpetas = carp || [];
+  dataDocClients = docs || [];
+  dataLineaClients = lin || [];
+}
+
+// ═══════════════════════════════════════════════
+//  CÁLCULO DE RESULTADOS REALES POR INDICADOR
+// ═══════════════════════════════════════════════
+
+// Para "Carpetas de Crédito" y "Tiempo de Respuesta" el universo es el TOTAL
+// de solicitudes asignadas en el mes (según fecha de asignación real, no según
+// el texto guardado en la columna "mes", que puede venir inconsistente en
+// registros viejos).
+function parseMesLabelStr(str) {
+  const partes = String(str || '').split(' ');
+  return { mesIdx: MESES.indexOf(partes[0]), anio: +partes[1] };
+}
+
+function carpetasAsignadasEnPeriodo(mesLabelStr) {
+  const { mesIdx, anio } = parseMesLabelStr(mesLabelStr);
+  if (mesIdx === -1 || !anio) return [];
+  return dataCarpetas.filter(c => {
+    const f = fechaIngreso(c);
+    return f && f.getMonth() === mesIdx && f.getFullYear() === anio;
+  });
+}
+
+function normalizarTexto(s) {
+  return String(s || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// ═══════════════════════════════════════════════
+//  LECTURA DE LOS CAMPOS NUEVOS DEL CRM  (v2 del tablero)
+//  El CRM pasó a `resolucionAnalista`, `obsAnalistaComite`, `tipoRespuesta` y
+//  fecha+hora separadas. Se leen esos campos; las columnas viejas quedan solo
+//  como respaldo para registros que todavía no se hayan vuelto a guardar.
+// ═══════════════════════════════════════════════
+
+// Google Sheets puede convertir las columnas de hora de texto a valores de hora,
+// que la API devuelve anclados a 1899-12-30 con el desfasaje de zona horaria del
+// proyecto de Apps Script (-8 h) ya aplicado. Restándolo se recupera la hora real.
+const OFFSET_EPOCH_SHEETS_MIN = -480;
+
+function esHoraSerializada(v) {
+  return /^(1899|1900)-\d{2}-\d{2}T/.test(String(v || ''));
+}
+
+function horaHHMM(v) {
+  const str = String(v || '').trim();
+  if (!str) return '';
+  const m = str.match(/^(\d{1,2}):(\d{2})/);
+  if (m) {
+    const h = +m[1], mi = +m[2];
+    if (h > 23 || mi > 59) return '';
+    return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+  }
+  if (!esHoraSerializada(str)) return '';
+  const d = new Date(str);
+  if (isNaN(d)) return '';
+  let min = Math.round((d.getTime() - Date.UTC(1899, 11, 30)) / 60000) + OFFSET_EPOCH_SHEETS_MIN;
+  min = ((min % 1440) + 1440) % 1440;
+  return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
+}
+
+// Momento exacto (Date) a partir de fecha + hora; si la hora no se puede leer,
+// usa el timestamp ISO viejo como respaldo.
+function momento(fechaTexto, horaTexto, timestampViejo) {
+  const d = parseFechaTexto(fechaTexto);
+  if (d) {
+    const hhmm = horaHHMM(horaTexto);
+    if (hhmm) { const [h, mi] = hhmm.split(':').map(Number); d.setHours(h, mi, 0, 0); return d; }
+  }
+  if (timestampViejo) { const t = new Date(timestampViejo); if (!isNaN(t)) return t; }
+  return d || null;
+}
+
+// Fecha de ingreso de documentos (antes "fecha de asignación").
+function fechaIngreso(c) {
+  return parseFechaTexto(c.fechaIngresoDocs) || parseFechaTexto(c.fechaAsig);
+}
+
+// Resolución del analista. Si el registro todavía no se volvió a guardar con la
+// estructura nueva, se deduce de la columna vieja.
+const _RESOL_DESDE_VIEJO = {
+  'APROBADO': 'Aprobado Sin Observaciones',
+  'RECHAZADO': 'Rechazado',
+  'EN REVISIÓN COMITÉ': 'Derivado a Comité',
+  'EN REVISION COMITE': 'Derivado a Comité',
+  'EN PROCESO': 'En Análisis'
+};
+function resolucion(c) {
+  const r = String(c.resolucionAnalista || '').trim();
+  if (r) return r;
+  return _RESOL_DESDE_VIEJO[normalizarTexto(c.tipoResolucion)] || '';
+}
+
+const RESOLUCIONES_APROBADAS = ['Aprobado Sin Observaciones', 'Aprobado con Excepción'];
+const RESOLUCIONES_DEFINITIVAS = RESOLUCIONES_APROBADAS.concat(['Rechazado']);
+function resolucionEsDefinitiva(c) { return RESOLUCIONES_DEFINITIVAS.includes(resolucion(c)); }
+
+// "Cumplido" = la resolución del analista es COHERENTE con la observación que
+// ella misma registró al revisar la carpeta:
+//   Aprobado Sin Observaciones + SIN OBSERVACIONES
+//   Aprobado con Excepción     + FALTA DOCUMENTACIÓN
+//   Rechazado                  + NO CALIFICA
+// Cualquier otra combinación, y las carpetas todavía abiertas (En Análisis,
+// Derivado a Comité), quedan fuera del numerador. Como siguen contando en el
+// denominador (total de carpetas ingresadas en el mes), restan resultado.
+const COHERENCIA_CARPETA = {
+  'Aprobado Sin Observaciones': 'SIN OBSERVACIONES',
+  'Aprobado con Excepción':     'FALTA DOCUMENTACION',
+  'Rechazado':                  'NO CALIFICA'
+};
+function cumpleCriterioCarpeta(c) {
+  const esperada = COHERENCIA_CARPETA[resolucion(c)];
+  if (!esperada) return false;
+  return normalizarTexto(c.obsAnalistaComite) === esperada;
+}
+
+function calcularIndicadorCarpetas(mes) {
+  const filtradas = carpetasAsignadasEnPeriodo(mes);
+  const denom = filtradas.length;
+  const num = filtradas.filter(c => cumpleCriterioCarpeta(c)).length;
+  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Carpetas cuya Resolución del Analista es coherente con su Observación (Aprobado Sin Observaciones + SIN OBSERVACIONES; Aprobado con Excepción + FALTA DOCUMENTACIÓN; Rechazado + NO CALIFICA) / Total de carpetas ingresadas en el mes (según Fecha Ingreso Docs.). Las combinaciones incoherentes y las carpetas todavía abiertas no suman y restan resultado.' };
+}
+
+function calcularIndicadorDocumentos(mes) {
+  const filtradas = dataDocClients.filter(d => (d.mes || '') === mes);
+  const denom = filtradas.length;
+  const num = filtradas.filter(d => {
+    const tr = String(d.tipoRespuesta || '').trim();
+    if (tr) return tr === 'Docs. Actualizados';
+    return d.estado === 'FINALIZADO'; // respaldo: registro aún no reguardado
+  }).length;
+  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Clientes programados en el mes con Tipo de Respuesta = "Docs. Actualizados"' };
+}
+
+function calcularIndicadorLineas(mes) {
+  const filtradas = dataLineaClients.filter(d => (d.mes || '') === mes);
+  const denom = filtradas.length;
+  const num = filtradas.filter(d => {
+    const tr = String(d.tipoRespuesta || '').trim();
+    if (tr) return tr === 'Nueva LC GS.' || tr === 'Mantiene LC Actual';
+    return d.estado === 'FINALIZADO' || d.estado === 'MANTIENE LC'; // respaldo
+  }).length;
+  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Clientes programados en el mes con Tipo de Respuesta = "Nueva LC GS." o "Mantiene LC Actual"' };
+}
+
+function calcularIndicadorTiempos(mes) {
+  const asignadas = carpetasAsignadasEnPeriodo(mes);
+  const denom = asignadas.length; // total de carpetas asignadas en el mes
+  const horas = asignadas.map(c => {
+    const ing = momento(c.fechaIngresoDocs || c.fechaAsig, c.horaIngresoDocs, c.ingresoTimestamp);
+    const res = momento(c.fechaResolucion, c.horaResolucion, c.resolTimestamp);
+    if (!ing || !res) return NaN;
+    return (res - ing) / 3600000;
+  }).filter(h => !isNaN(h) && h >= 0);
+  const num = horas.length;
+  const resultado = num > 0 ? horas.reduce((a,b) => a+b, 0) / num : null;
+  return { resultado, num, denom, detalle: 'Promedio de horas entre Fecha/Hora de Ingreso de Documentos y Fecha/Hora de Resolución, sobre las carpetas ya resueltas, del total ingresado en el mes' };
+}
+
+function calcularAprobacion(mes) {
+  const filtradas = dataCarpetas.filter(c => (c.mes || '') === mes && resolucionEsDefinitiva(c));
+  const denom = filtradas.length;
+  const num = filtradas.filter(c => RESOLUCIONES_APROBADAS.includes(resolucion(c))).length;
+  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Carpetas aprobadas (Sin Observaciones o con Excepción) / Carpetas con resolución definitiva en el mes' };
+}
+
+function calcularEvaluados(mes) {
+  const filtradas = dataCarpetas.filter(c => (c.mes || '') === mes && resolucionEsDefinitiva(c));
+  return { resultado: filtradas.length, num: filtradas.length, denom: null, detalle: 'Carpetas con resolución definitiva (Aprobado Sin Observaciones, Aprobado con Excepción o Rechazado) en el mes' };
+}
+
+// Parser robusto: entiende dd/mm/aaaa (con o sin ceros a la izquierda),
+// dd-mm-aaaa e ISO (aaaa-mm-dd...). Evita el parseo ambiguo nativo de JS
+// (que interpreta "5/8/2026" como mes/día en vez de día/mes).
+function parseFechaTexto(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) {
+    const dia = +m[1], mesN = +m[2], anio = +m[3];
+    if (mesN >= 1 && mesN <= 12 && dia >= 1 && dia <= 31) return new Date(anio, mesN - 1, dia);
+  }
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+// Un cliente se cuenta como "nuevo" en el mes en que aparece por primera vez
+// (fecha de asignación más antigua) entre todas las carpetas del CRM.
+let _primeraAparicionCache = null;
+function obtenerPrimeraAparicionPorCliente() {
+  if (_primeraAparicionCache) return _primeraAparicionCache;
+  const mapa = {};
+  dataCarpetas.forEach(c => {
+    const cod = c.codigoCliente;
+    if (!cod) return;
+    const f = parseFechaTexto(c.fechaAsig);
+    if (!f) return;
+    if (!mapa[cod] || f < mapa[cod]) mapa[cod] = f;
+  });
+  _primeraAparicionCache = mapa;
+  return mapa;
+}
+
+function calcularNuevosClientes(mesIdx, anio) {
+  const mapa = obtenerPrimeraAparicionPorCliente();
+  let count = 0;
+  Object.values(mapa).forEach(f => { if (f.getMonth() === mesIdx && f.getFullYear() === +anio) count++; });
+  return { resultado: count, num: count, denom: null, detalle: 'Clientes cuya primera carpeta en el CRM corresponde a este mes' };
+}
+
+function calcularPuntajeTotalPeriodo(mes) {
+  const claves = ['carpetas', 'documentos', 'tiempos', 'lineas'];
+  const calculadores = {
+    carpetas: calcularIndicadorCarpetas,
+    documentos: calcularIndicadorDocumentos,
+    tiempos: calcularIndicadorTiempos,
+    lineas: calcularIndicadorLineas
+  };
+  let puntajeTotal = 0;
+  let pesoConDatos = 0;
+  const detalles = {};
+  claves.forEach(clave => {
+    const ind = CONFIG.indicadores[clave];
+    const calc = calculadores[clave](mes);
+    detalles[clave] = calc;
+    const puntaje = puntajeSegunEscala(calc.resultado, ind);
+    if (puntaje !== null) { puntajeTotal += puntaje * ind.peso; pesoConDatos += ind.peso; }
+  });
+  return { puntajeTotal, pesoConDatos, detalles };
+}
+
+function puntajeSegunEscala(resultado, indicador) {
+  if (resultado === null) return null;
+  const escala = indicador.escala;
+  if (indicador.tipo === 'inverso') {
+    for (const banda of escala) { if (resultado <= banda.umbral) return banda.puntaje; }
+    return escala[escala.length - 1].puntaje;
+  } else {
+    for (const banda of escala) { if (resultado >= banda.umbral) return banda.puntaje; }
+    return escala[escala.length - 1].puntaje;
+  }
+}
+
+function calificacionPorPuntaje(puntajeTotal) {
+  for (const b of CONFIG.comisiones) {
+    if (puntajeTotal >= b.min && puntajeTotal <= b.max) return b;
+  }
+  return CONFIG.comisiones[CONFIG.comisiones.length - 1];
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER — RESULTADOS
+// ═══════════════════════════════════════════════
+let ultimoResultado = null;
+
+function renderResultados() {
+  const mes = document.getElementById('sel-mes').value;
+  const anio = document.getElementById('sel-anio').value;
+  const periodo = mesLabel(+mes, anio);
+
+  const claves = ['carpetas', 'documentos', 'tiempos', 'lineas'];
+  const calculadores = {
+    carpetas: calcularIndicadorCarpetas,
+    documentos: calcularIndicadorDocumentos,
+    tiempos: calcularIndicadorTiempos,
+    lineas: calcularIndicadorLineas
+  };
+
+  const tbody = document.getElementById('tbody-resultados');
+  tbody.innerHTML = '';
+
+  const { puntajeTotal, pesoConDatos, detalles } = calcularPuntajeTotalPeriodo(periodo);
+
+  claves.forEach((clave, i) => {
+    const ind = CONFIG.indicadores[clave];
+    const calc = detalles[clave];
+    const puntaje = puntajeSegunEscala(calc.resultado, ind);
+    const ponderado = puntaje !== null ? puntaje * ind.peso : null;
+
+    const resultadoStr = calc.resultado === null ? 'Sin datos'
+      : (ind.tipo === 'inverso' ? calc.resultado.toFixed(1) + ' hs' : pct(calc.resultado));
+    const nivelClase = puntaje === null ? '' : puntaje >= 90 ? 'nivel-alto' : puntaje >= 70 ? 'nivel-medio-alto' : puntaje >= 50 ? 'nivel-medio' : 'nivel-bajo';
+    const puntajeStr = puntaje === null ? '—' : `<span class="badge-score ${nivelClase}">${puntaje}</span>`;
+    const ponderadoStr = ponderado === null ? '—' : ponderado.toFixed(1);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${ind.nombre}<br><span style="font-size:10.5px;color:#78909C;">${ind.formula}</span></td>
+      <td>${(ind.peso*100).toFixed(0)}%</td>
+      <td>${metaDeIndicador(ind)}</td>
+      <td class="num">${resultadoStr}</td>
+      <td class="num">${puntajeStr}</td>
+      <td class="num">${ponderadoStr}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('td-puntaje-total').textContent = puntajeTotal.toFixed(1);
+  document.getElementById('box-puntaje-total').textContent = puntajeTotal.toFixed(1) + ' pts';
+
+  const banda = calificacionPorPuntaje(puntajeTotal);
+  const boxCalif = document.getElementById('box-calificacion');
+  boxCalif.innerHTML = `<span class="calif-${banda.calif}">${banda.calif}</span>`;
+  document.getElementById('box-comision').textContent = fmtGs(banda.monto);
+  document.getElementById('box-comision-desc').textContent = `Rango ${banda.min}–${banda.max} pts`;
+
+  if (pesoConDatos < 1) {
+    const banner = document.getElementById('stale-banner');
+    banner.style.display = 'block';
+    banner.textContent = `⚠️ Uno o más indicadores no tienen datos registrados para ${periodo}. El puntaje total puede estar incompleto.`;
+  } else {
+    document.getElementById('stale-banner').style.display = 'none';
+  }
+
+  renderDetalle(periodo, detalles);
+  ultimoResultado = { periodo, puntajeTotal, banda, detalles };
+}
+
+function renderDetalle(periodo, detalles) {
+  const grid = document.getElementById('detalle-grid');
+  grid.innerHTML = '';
+  const nombres = { carpetas: 'Carpetas de Crédito', documentos: 'Documentación de Clientes', tiempos: 'Tiempo de Respuesta', lineas: 'Líneas de Crédito' };
+  Object.keys(detalles).forEach(clave => {
+    const d = detalles[clave];
+    const div = document.createElement('div');
+    div.className = 'detail-card';
+    const esTiempo = clave === 'tiempos';
+    div.innerHTML = `
+      <h3>${nombres[clave]}</h3>
+      <div class="kv"><span>${esTiempo ? 'Carpetas con resolución registrada' : 'Registros cumplidos'}</span><b>${d.num}</b></div>
+      <div class="kv"><span>${esTiempo ? 'Total de carpetas asignadas' : 'Total programados/asignados'}</span><b>${d.denom}</b></div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  KPI — REPORTE MENSUAL (8 indicadores, Ene–Dic)
+// ═══════════════════════════════════════════════
+const KPI_DEFS = [
+  { id: 'carpetas',      nombre: '1. Resolución coherente / ingresadas', def: '% de carpetas cuya Resolución del Analista es coherente con la Observación registrada (Aprobado Sin Observaciones + SIN OBSERVACIONES; Aprobado con Excepción + FALTA DOCUMENTACIÓN; Rechazado + NO CALIFICA), sobre el total ingresado en el mes', tipo: 'pct',
+    calc: (mesIdx, anio) => calcularIndicadorCarpetas(mesLabel(mesIdx, anio)).resultado, meta: () => metaDeIndicador(CONFIG.indicadores.carpetas) },
+  { id: 'documentos',    nombre: '2. Documentación actualizada', def: '% clientes con docs vigentes', tipo: 'pct',
+    calc: (mesIdx, anio) => calcularIndicadorDocumentos(mesLabel(mesIdx, anio)).resultado, meta: () => metaDeIndicador(CONFIG.indicadores.documentos) },
+  { id: 'tiempos',       nombre: '3. Tiempo promedio de respuesta (hs)', def: 'Promedio horas solicitud→resolución', tipo: 'hs',
+    calc: (mesIdx, anio) => calcularIndicadorTiempos(mesLabel(mesIdx, anio)).resultado, meta: () => metaDeIndicador(CONFIG.indicadores.tiempos) },
+  { id: 'lineas',        nombre: '4. Líneas de crédito revisadas', def: '% clientes revisados / programados', tipo: 'pct',
+    calc: (mesIdx, anio) => calcularIndicadorLineas(mesLabel(mesIdx, anio)).resultado, meta: () => metaDeIndicador(CONFIG.indicadores.lineas) },
+  { id: 'evaluados',     nombre: '5. Créditos evaluados en el período', def: 'Cantidad total de créditos analizados', tipo: 'num',
+    calc: (mesIdx, anio) => calcularEvaluados(mesLabel(mesIdx, anio)).resultado, meta: () => 'Reportar' },
+  { id: 'nuevos',        nombre: '6. Clientes nuevos incorporados', def: 'Nuevos clientes gestionados en el mes', tipo: 'num',
+    calc: (mesIdx, anio) => calcularNuevosClientes(mesIdx, anio).resultado, meta: () => 'Reportar' },
+  { id: 'aprobacion',    nombre: '7. Créditos aprobados / evaluados', def: 'Tasa de aprobación', tipo: 'pct',
+    calc: (mesIdx, anio) => calcularAprobacion(mesLabel(mesIdx, anio)).resultado, meta: () => pct(CONFIG.kpiMetas.aprobacion) },
+  { id: 'global',        nombre: '8. Índice de puntaje global', def: 'Puntaje ponderado total del tablero', tipo: 'pts',
+    calc: (mesIdx, anio) => {
+      const r = calcularPuntajeTotalPeriodo(mesLabel(mesIdx, anio));
+      return r.pesoConDatos > 0 ? r.puntajeTotal : null;
+    }, meta: () => `≥ ${CONFIG.kpiMetas.puntajeGlobal} pts` }
+];
+
+function fmtKpiValor(valor, tipo) {
+  if (valor === null || valor === undefined || isNaN(valor)) return '—';
+  if (tipo === 'pct') return pct(valor);
+  if (tipo === 'hs') return valor.toFixed(1) + ' hs';
+  if (tipo === 'pts') return valor.toFixed(1) + ' pts';
+  return valor.toFixed(1);
+}
+
+function poblarSelectorAnioKPI() {
+  const sel = document.getElementById('sel-kpi-anio');
+  const anioActual = new Date().getFullYear();
+  const anios = [];
+  for (let a = anioActual - 2; a <= anioActual + 1; a++) anios.push(a);
+  sel.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join('');
+  sel.value = anioActual;
+  sel.onchange = renderTablaKPI;
+}
+
+function renderTablaKPI() {
+  _primeraAparicionCache = null; // invalidar cache por si hay datos nuevos
+  const anio = +document.getElementById('sel-kpi-anio').value;
+  const tbody = document.getElementById('tbody-kpi-mensual');
+  tbody.innerHTML = '';
+
+  KPI_DEFS.forEach(kpi => {
+    const valoresMensuales = [];
+    for (let m = 0; m < 12; m++) valoresMensuales.push(kpi.calc(m, anio));
+    const conDatos = valoresMensuales.filter(v => v !== null && v !== undefined && !isNaN(v));
+    const promedio = conDatos.length ? conDatos.reduce((a,b) => a+b, 0) / conDatos.length : null;
+
+    const tr = document.createElement('tr');
+    const celdasMeses = valoresMensuales.map(v => `<td class="num">${fmtKpiValor(v, kpi.tipo)}</td>`).join('');
+    tr.innerHTML = `
+      <td><b>${kpi.nombre}</b><span class="kpi-info" title="${kpi.def}">ℹ</span></td>
+      ${celdasMeses}
+      <td class="num"><b>${fmtKpiValor(promedio, kpi.tipo)}</b></td>
+      <td class="num">${kpi.meta()}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  SELECTORES DE PERÍODO / ANALISTA
+// ═══════════════════════════════════════════════
+function poblarSelectoresPeriodo() {
+  const selMes = document.getElementById('sel-mes');
+  const selAnio = document.getElementById('sel-anio');
+  selMes.innerHTML = MESES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+  const anioActual = new Date().getFullYear();
+  const anios = [];
+  for (let a = anioActual - 2; a <= anioActual + 1; a++) anios.push(a);
+  selAnio.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join('');
+  selMes.value = new Date().getMonth();
+  selAnio.value = anioActual;
+  selMes.onchange = renderResultados;
+  selAnio.onchange = renderResultados;
+  poblarSelectorAnioKPI();
+}
+
+function poblarSelectorAnalista() {
+  const sel = document.getElementById('sel-analista');
+  const actual = sel.value;
+  sel.innerHTML = (CONFIG.analistas || []).map(a => `<option value="${a}">${a}</option>`).join('');
+  if (actual && CONFIG.analistas.includes(actual)) sel.value = actual;
+}
+
+// ═══════════════════════════════════════════════
+//  ACTUALIZAR TODO
+// ═══════════════════════════════════════════════
+async function actualizarTodo() {
+  const btn = document.getElementById('btn-actualizar');
+  const status = document.getElementById('status-msg');
+  btn.disabled = true;
+  status.textContent = 'Actualizando…';
+  status.style.color = '#78909C';
+  await cargarDatosCRM();
+  renderResultados();
+  renderTablaKPI();
+  document.getElementById('last-update-note').textContent = 'Última actualización: ' + new Date().toLocaleString('es-PY');
+  status.textContent = '✔ Datos actualizados';
+  status.style.color = 'var(--verde)';
+  btn.disabled = false;
+  setTimeout(() => { status.textContent = ''; }, 3500);
+}
+
+function toggleCard(name) {
+  const body = document.getElementById('body-' + name);
+  body.classList.toggle('collapsed');
+}
+
+// ═══════════════════════════════════════════════
+//  PARÁMETROS — UI protegida
+// ═══════════════════════════════════════════════
+function toggleParametros() {
+  const body = document.getElementById('body-parametros');
+  if (!body.classList.contains('collapsed')) { body.classList.add('collapsed'); return; }
+  if (paramsUnlocked) { body.classList.remove('collapsed'); renderParametrosUI(); return; }
+  const clave = window.prompt('🔒 Ingresá la contraseña de acceso a Parámetros:');
+  if (clave === null) return;
+  if (clave !== CONFIG.claveAcceso) { alert('❌ Contraseña incorrecta.'); return; }
+  paramsUnlocked = true;
+  body.classList.remove('collapsed');
+  renderParametrosUI();
+}
+
+function cambiarClaveAcceso() {
+  const actual = window.prompt('Ingresá la contraseña actual:');
+  if (actual === null) return;
+  if (actual !== CONFIG.claveAcceso) { alert('❌ Contraseña incorrecta.'); return; }
+  const nueva = window.prompt('Ingresá la nueva contraseña (mínimo 4 caracteres):');
+  if (nueva === null) return;
+  if (nueva.trim().length < 4) { alert('La contraseña debe tener al menos 4 caracteres.'); return; }
+  CONFIG.claveAcceso = nueva.trim();
+  alert('Contraseña actualizada en memoria. Presioná "💾 Guardar Parámetros" para confirmar el cambio.');
+}
+
+function renderAnalistasUI() {
+  const wrap = document.getElementById('analistas-manage');
+  wrap.innerHTML = (CONFIG.analistas || []).map((a, i) => `
+    <span class="analista-chip">${a}<button title="Quitar" onclick="quitarAnalista(${i})">✕</button></span>
+  `).join('') || '<span style="color:#90A4AE;font-size:12px;">Sin analistas cargadas.</span>';
+}
+function agregarAnalista() {
+  const inp = document.getElementById('input-nueva-analista');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!CONFIG.analistas) CONFIG.analistas = [];
+  if (CONFIG.analistas.includes(val)) { alert('Esa analista ya está en la lista.'); return; }
+  CONFIG.analistas.push(val);
+  inp.value = '';
+  renderAnalistasUI();
+  poblarSelectorAnalista();
+}
+function quitarAnalista(i) {
+  if (!confirm('¿Quitar esta analista de la lista?')) return;
+  CONFIG.analistas.splice(i, 1);
+  renderAnalistasUI();
+  poblarSelectorAnalista();
+}
+
+function renderParametrosIndicadoresUI() {
+  const grid = document.getElementById('params-indicadores-grid');
+  grid.innerHTML = '';
+  Object.keys(CONFIG.indicadores).forEach(clave => {
+    const ind = CONFIG.indicadores[clave];
+    const unidad = ind.tipo === 'inverso' ? 'hs (≤)' : '% (≥)';
+    const block = document.createElement('div');
+    block.className = 'param-block';
+    block.innerHTML = `
+      <h3>${ind.nombre}
+        <span><input type="number" class="peso-input" data-clave="${clave}" data-campo="peso" value="${(ind.peso*100).toFixed(0)}" min="0" max="100" step="1">%</span>
+      </h3>
+      <div class="meta-derivada" id="meta-derivada-${clave}">Meta resultante: <b>${metaDeIndicador(ind)}</b> <span title="La meta es el umbral que otorga 100 puntos en la escala. Se actualiza al cambiar la escala.">ℹ</span></div>
+      <div class="scale-row"><span>Umbral ${unidad}</span><span>Puntaje</span></div>
+      ${ind.escala.map((b, i) => `
+        <div class="scale-row">
+          <input type="number" step="any" data-clave="${clave}" data-campo="umbral" data-idx="${i}"
+                 value="${(b.umbral === Infinity) ? '' : (ind.tipo==='inverso' ? b.umbral : (b.umbral*100))}"
+                 ${b.umbral === Infinity ? 'placeholder="resto" disabled' : ''}>
+          <input type="number" data-clave="${clave}" data-campo="puntaje" data-idx="${i}" value="${b.puntaje}" min="0" max="100">
+        </div>`).join('')}
+    `;
+    grid.appendChild(block);
+  });
+  grid.querySelectorAll('input[data-campo="umbral"], input[data-campo="puntaje"]').forEach(inp => {
+    inp.addEventListener('input', actualizarMetasDerivadasUI);
+  });
+}
+
+// Recalcula la "Meta resultante" de cada bloque mientras se edita la escala (sin guardar).
+function actualizarMetasDerivadasUI() {
+  Object.keys(CONFIG.indicadores).forEach(clave => {
+    const ind = CONFIG.indicadores[clave];
+    const tmp = { tipo: ind.tipo, escala: ind.escala.map(b => ({ umbral: b.umbral, puntaje: b.puntaje })) };
+    document.querySelectorAll(`#params-indicadores-grid input[data-clave="${clave}"]`).forEach(inp => {
+      const idx = +inp.dataset.idx;
+      if (inp.dataset.campo === 'umbral' && !inp.disabled) {
+        const v = parseFloat(inp.value);
+        tmp.escala[idx].umbral = isNaN(v) ? 0 : (ind.tipo === 'inverso' ? v : v/100);
+      } else if (inp.dataset.campo === 'puntaje') {
+        tmp.escala[idx].puntaje = parseInt(inp.value, 10) || 0;
+      }
+    });
+    const el = document.getElementById('meta-derivada-' + clave);
+    if (el) el.innerHTML = `Meta resultante: <b>${metaDeIndicador(tmp)}</b> <span title="La meta es el umbral que otorga 100 puntos en la escala. Se actualiza al cambiar la escala.">ℹ</span>`;
+  });
+}
+
+function renderComisionesUI() {
+  const wrap = document.getElementById('comision-rows');
+  wrap.innerHTML = CONFIG.comisiones.map((b, i) => `
+    <div class="comision-row">
+      <input type="number" data-idx="${i}" data-campo="min" value="${b.min}">
+      <input type="number" data-idx="${i}" data-campo="max" value="${b.max}">
+      <input type="text" data-idx="${i}" data-campo="calif" value="${b.calif}">
+      <input type="number" data-idx="${i}" data-campo="monto" value="${b.monto}">
+    </div>`).join('');
+}
+
+function renderParametrosUI() {
+  renderAnalistasUI();
+  renderParametrosIndicadoresUI();
+  renderComisionesUI();
+  document.getElementById('input-meta-aprobacion').value = (CONFIG.kpiMetas.aprobacion * 100).toFixed(0);
+  document.getElementById('input-meta-puntaje-global').value = CONFIG.kpiMetas.puntajeGlobal;
+}
+
+function leerParametrosDeUI() {
+  // Pesos y escalas por indicador
+  document.querySelectorAll('#params-indicadores-grid input').forEach(inp => {
+    const clave = inp.dataset.clave;
+    const campo = inp.dataset.campo;
+    const ind = CONFIG.indicadores[clave];
+    if (campo === 'peso') {
+      ind.peso = (parseFloat(inp.value) || 0) / 100;
+    } else if (campo === 'umbral') {
+      const idx = +inp.dataset.idx;
+      if (inp.disabled) { ind.escala[idx].umbral = Infinity; return; }
+      const v = parseFloat(inp.value);
+      ind.escala[idx].umbral = isNaN(v) ? 0 : (ind.tipo === 'inverso' ? v : v/100);
+    } else if (campo === 'puntaje') {
+      const idx = +inp.dataset.idx;
+      ind.escala[idx].puntaje = parseInt(inp.value, 10) || 0;
+    }
+  });
+  // Bandas de comisión
+  document.querySelectorAll('#comision-rows input').forEach(inp => {
+    const idx = +inp.dataset.idx;
+    const campo = inp.dataset.campo;
+    const b = CONFIG.comisiones[idx];
+    if (campo === 'min' || campo === 'max' || campo === 'monto') b[campo] = parseFloat(inp.value) || 0;
+    if (campo === 'calif') b.calif = inp.value.trim().toUpperCase();
+  });
+  // Metas adicionales (KPI Reporte Mensual)
+  const metaAprob = parseFloat(document.getElementById('input-meta-aprobacion').value);
+  CONFIG.kpiMetas.aprobacion = isNaN(metaAprob) ? CONFIG.kpiMetas.aprobacion : metaAprob/100;
+  const metaGlobal = parseFloat(document.getElementById('input-meta-puntaje-global').value);
+  CONFIG.kpiMetas.puntajeGlobal = isNaN(metaGlobal) ? CONFIG.kpiMetas.puntajeGlobal : metaGlobal;
+}
+
+async function guardarParametros() {
+  leerParametrosDeUI();
+  const sumaPesos = Object.values(CONFIG.indicadores).reduce((a, ind) => a + ind.peso, 0);
+  if (Math.abs(sumaPesos - 1) > 0.005) {
+    if (!confirm(`⚠️ La suma de los pesos es ${(sumaPesos*100).toFixed(1)}% (debería ser 100%). ¿Guardar de todas formas?`)) return;
+  }
+  const status = document.getElementById('status-params-msg');
+  status.textContent = 'Guardando…';
+  status.style.color = '#78909C';
+  const ok = await guardarConfigEnSheet();
+  status.textContent = ok ? '✔ Parámetros guardados' : '❌ No se pudo guardar';
+  status.style.color = ok ? 'var(--verde)' : 'var(--rojo)';
+  poblarSelectorAnalista();
+  renderResultados();
+  setTimeout(() => { status.textContent = ''; }, 3500);
+}
+
+function restaurarParametrosDefault() {
+  if (!confirm('¿Restaurar todos los parámetros a los valores por defecto (según el tablero original)? Esto no se guarda hasta presionar "Guardar Parámetros".')) return;
+  const analistasActuales = CONFIG.analistas;
+  const clave = CONFIG.claveAcceso;
+  CONFIG = configPorDefecto();
+  CONFIG.analistas = analistasActuales;
+  CONFIG.claveAcceso = clave;
+  renderParametrosUI();
+}
+
+// ═══════════════════════════════════════════════
+//  INICIO
+// ═══════════════════════════════════════════════
+async function initApp() {
+  poblarSelectoresPeriodo();
+  await cargarConfig();
+  poblarSelectorAnalista();
+  await cargarDatosCRM();
+  renderResultados();
+  renderTablaKPI();
+  document.getElementById('last-update-note').textContent = 'Última actualización: ' + new Date().toLocaleString('es-PY');
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
