@@ -380,6 +380,23 @@
   .param-field { display:inline-flex; align-items:center; gap:8px; background:var(--azul-claro); border:1px solid #90CAF9; border-radius:6px; padding:8px 14px; }
   .param-field label { font-weight:700; color:var(--azul); font-size:12px; }
   .param-field input { border:1px solid #90CAF9; border-radius:4px; padding:4px 8px; font-size:12px; color:var(--azul); width:80px; font-family:inherit; }
+
+  /* ── Asignación mensual (v22) ── */
+  .asig-resumen { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin:12px 0; }
+  .asig-kpi { background:var(--gris-claro); border:1px solid var(--borde); border-radius:6px; padding:8px 10px; }
+  .asig-kpi b { display:block; font-size:18px; color:var(--azul); }
+  .asig-kpi span { font-size:11px; color:#455A64; }
+  .asig-bloque { border:1px solid var(--borde); border-radius:8px; padding:12px 14px; margin-top:14px; background:#fff; }
+  .asig-bloque h3 { font-size:14px; color:var(--azul); margin-bottom:4px; }
+  .asig-tabla { width:100%; border-collapse:collapse; font-size:11.5px; margin-top:8px; }
+  .asig-tabla th { background:var(--azul-claro); color:var(--azul); padding:5px 8px; text-align:left; border:1px solid #90CAF9; }
+  .asig-tabla td { padding:4px 8px; border:1px solid var(--borde); color:#263238; }
+  .asig-scroll { max-height:260px; overflow-y:auto; }
+  .asig-aviso { font-size:11.5px; color:#5D4037; background:var(--amarillo-claro); border:1px solid var(--amarillo); border-radius:6px; padding:8px 10px; margin-top:8px; }
+  .dnl-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+  .dnl-row input, .dnl-row select { border:1px solid #90CAF9; border-radius:4px; padding:5px 8px; font-size:12px; font-family:inherit; color:var(--azul); background:#fff; }
+  .dnl-list { list-style:none; padding:0; margin-top:10px; display:flex; flex-direction:column; gap:4px; }
+  .dnl-list li { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 10px; background:var(--gris-claro); border:1px solid var(--borde); border-radius:4px; font-size:12px; color:#37474F; }
 </style>
 </head>
 <body>
@@ -536,6 +553,7 @@
           <span class="filter-sep">a</span>
           <input type="date" id="doc-prox-hasta" class="date-filter-input" title="Hasta" oninput="renderDocTable()">
         </div>
+        <div class="pend-filtro" id="doc-asig-chips"></div>
         <div class="pend-filtro" id="doc-pend-chips"></div>
         <button type="button" class="btn-clear-filter" onclick="limpiarFiltrosDoc()">✕ Limpiar</button>
         <div class="filter-actions">
@@ -592,6 +610,7 @@
           <span class="filter-sep">a</span>
           <input type="date" id="lin-prox-hasta" class="date-filter-input" title="Hasta" oninput="renderLineasTable()">
         </div>
+        <div class="pend-filtro" id="lin-asig-chips"></div>
         <div class="pend-filtro" id="lin-pend-chips"></div>
         <button type="button" class="btn-clear-filter" onclick="limpiarFiltrosLineas()">✕ Limpiar</button>
         <div class="filter-actions">
@@ -632,31 +651,44 @@
 <div id="cargardatos" class="tab-panel">
   <div class="card">
     <div class="card-header">
-      <h2>📤 Carga de Base de Clientes</h2>
-      <p>Cargue un único archivo con la base de clientes del mes. La información alimentará automáticamente las pestañas <b>Actualización de Documentos</b> y <b>Líneas de Crédito</b>.</p>
+      <h2>📤 Carga de Cartera de Clientes</h2>
+      <p>Cargue el archivo con <b>toda la cartera</b> (una fila por cliente). Los clientes se cruzan por <b>Código Cliente</b>: los nuevos se agregan y los existentes conservan sus gestiones y comentarios. Cargar la cartera <b>no asigna</b> clientes: eso se hace con <b>Asignar mes</b>.</p>
     </div>
     <div class="card-body">
       <div class="upload-box">
         <div class="upload-row">
           <div class="field-group">
-            <label>Mes de Gestión:</label>
-            <input type="month" id="unif-mes-gestion">
-          </div>
-          <div class="field-group">
-            <label>Base de Clientes (.csv / .xlsx):</label>
+            <label>Cartera de Clientes (.csv / .xlsx):</label>
             <label for="unif-file-input" class="file-picker-btn">📁 Seleccionar archivo</label>
             <span id="unif-file-name" class="file-picker-name">Ningún archivo seleccionado</span>
             <input type="file" id="unif-file-input" accept=".csv,.xlsx,.xls" style="display:none;" onchange="onUnifFileSelected(this)">
           </div>
-          <button class="btn-add-row" onclick="solicitarAccesoYEjecutar(cargarBaseUnificada)">📤 Cargar Base</button>
+          <button class="btn-add-row" onclick="solicitarAccesoYEjecutar(cargarCartera)">📤 Cargar Cartera</button>
           <button class="btn-add-row btn-secondary" onclick="descargarPlantillaUnificada()">📥 Descargar Plantilla</button>
         </div>
         <div id="unif-upload-status" style="font-size:11.5px;margin-top:10px;color:#455A64;"></div>
       </div>
       <div class="alert-box">
         <span style="font-size:16px">ℹ️</span>
-        <span>La plantilla incluye columnas para ambas pestañas: <b>Documento a Actualizar</b> (usada en Actualización de Documentos) y <b>Línea Vigente (Gs.)</b> (usada en Líneas de Crédito). Si un cliente necesita actualizar más de un documento, agregue una fila adicional repitiendo su Código de Cliente y Nombre, con un documento distinto en cada fila (puede dejar Línea Vigente vacía en las filas repetidas). En <b>Líneas de Crédito</b> cada cliente aparecerá una sola vez, sin importar cuántas filas de documentos tenga en la base.</span>
+        <span>Una fila por cliente, con <b>Código Cliente</b> obligatorio. Las filas sin código se descartan y, si un código se repite, se toma la primera fila. Los clientes que ya estaban en la plataforma y no vienen en el archivo <b>se conservan</b>. Los documentos a actualizar no vienen en el archivo: los marca la analista al gestionar la cuenta.</span>
       </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>📅 Asignar mes</h2>
+      <p>Asigna a la bandeja de la analista la cantidad de cuentas definida en <b>Cuentas a asignar por mes</b>, repartidas entre los días hábiles del mes (sin sábados, domingos ni días no laborables cargados en Listas). Se calcula por separado para <b>Actualización de Documentos</b> y para <b>Líneas de Crédito</b>.</p>
+    </div>
+    <div class="card-body">
+      <div class="upload-row">
+        <div class="field-group">
+          <label>Mes a asignar:</label>
+          <input type="month" id="asig-mes">
+        </div>
+        <button class="btn-add-row" onclick="solicitarAccesoYEjecutar(previsualizarAsignacion)">👁 Vista previa de la asignación</button>
+      </div>
+      <div id="asig-preview"></div>
     </div>
   </div>
 
@@ -681,12 +713,36 @@
     </div>
     <div class="card-body">
       <div class="param-field">
-        <label>Mínimo de clientes a gestionar por mes:</label>
+        <label>Cuentas a asignar por mes:</label>
         <input type="number" id="param-min-clientes" min="1">
       </div>
       <div style="margin-top:16px;">
         <button class="btn-save-lists" onclick="saveParams()">💾 Guardar Parámetros</button>
         <span class="save-ok" id="save-ok-params">✔ Guardado correctamente</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h2>🗓 Días no laborables del analista</h2>
+      <p>Feriados, vacaciones y permisos. Esos días no reciben asignaciones, y al guardar se reprograman las gestiones ya asignadas que caigan en ellos (solo las que todavía no tienen Fecha de Gestión).</p>
+    </div>
+    <div class="card-body">
+      <div class="dnl-row">
+        <label style="font-size:12px;font-weight:600;color:var(--azul);">Desde</label>
+        <input type="date" id="dnl-desde">
+        <label style="font-size:12px;font-weight:600;color:var(--azul);">Hasta</label>
+        <input type="date" id="dnl-hasta" title="Opcional: dejar vacío si es un solo día">
+        <select id="dnl-tipo">
+          <option>Feriado</option><option>Vacaciones</option><option>Permiso</option>
+        </select>
+        <input type="text" id="dnl-detalle" placeholder="Detalle (opcional)" style="min-width:180px;">
+        <button class="btn-add-item" onclick="agregarDiaNoLaborable()">+ Agregar</button>
+      </div>
+      <ul class="dnl-list" id="dnl-list"></ul>
+      <div style="display:flex;align-items:center;margin-top:14px;">
+        <button class="btn-save-lists" style="margin-top:0;" onclick="guardarDiasNoLaborables()">💾 Guardar y reprogramar</button>
+        <span class="save-ok" id="save-ok-dnl">✔ Guardado correctamente</span>
       </div>
     </div>
   </div>
@@ -1605,6 +1661,12 @@ const DEFAULT_LISTS = {
   usuarios: {
     label: "Usuarios del Sistema (GENERAL)",
     items: []
+  },
+  // v22: rangos {desde:'aaaa-mm-dd', hasta:'aaaa-mm-dd', tipo, detalle}. Tiene su propia tarjeta en Listas.
+  diasNoLaborables: {
+    label: "Días no laborables del analista",
+    items: [],
+    especial: true
   }
 };
 
@@ -1811,8 +1873,16 @@ async function saveLists() {
     clave: key,
     itemsJSON: JSON.stringify(LISTS[key].items)
   }));
-  const r = await apiReemplazarTodo('Listas', filas);
-  if (!r.ok) avisarFalloConexion('Listas (guardado)');
+  // v22: se conservan las filas de claves que este código no administra (por ejemplo,
+  // listas viejas) en lugar de borrarlas, y se usa la guarda de concurrencia.
+  const actuales = await apiListar('Listas');
+  if (actuales !== null) {
+    actuales.forEach(f => {
+      if (f && f.clave && !LISTS[f.clave]) filas.push({ clave: f.clave, itemsJSON: f.itemsJSON || '' });
+    });
+  }
+  const r = (actuales === null) ? { ok: false } : await apiGuardarSiNoCambio('Listas', filas);
+  if (!r.ok && !r.desfase) avisarFalloConexion('Listas (guardado)');
 
   // refresh all selects in tables
   refreshAllSelects();
@@ -1834,6 +1904,7 @@ function renderListasUI() {
   grid.innerHTML = '';
   for (const key in LISTS) {
     const lst = LISTS[key];
+    if (lst.especial) continue; // tiene su propia tarjeta
     const card = document.createElement('div');
     card.className = 'dropdown-card';
     card.innerHTML = `
@@ -1848,6 +1919,7 @@ function renderListasUI() {
     `;
     grid.appendChild(card);
   }
+  renderDiasNoLaborablesUI();
 }
 
 function addListItem(key) {
@@ -2418,10 +2490,20 @@ async function loadParams() {
   if (inp) inp.value = PARAMS.minClientes;
 }
 
+// v22: antes se reescribía la hoja solo con estas dos claves y se borraba la
+// configuración del tablero (configIndicadoresComisiones). Ahora se leen todas las
+// filas y se conservan las claves que el CRM no administra.
 async function guardarParametrosEnSheet() {
+  const actuales = await apiListar('Parametros');
+  if (actuales === null) { avisarFalloConexion('Parametros (lectura previa al guardado)'); return false; }
+  const propias = ['minClientes', 'claveAcceso'];
+  const otras = actuales
+    .filter(f => f && f.clave && !propias.includes(f.clave))
+    .map(f => ({ clave: f.clave, valor: f.valor }));
   const r = await apiReemplazarTodo('Parametros', [
     { clave: 'minClientes', valor: String(PARAMS.minClientes) },
-    { clave: 'claveAcceso', valor: PARAMS.claveAcceso }
+    { clave: 'claveAcceso', valor: PARAMS.claveAcceso },
+    ...otras
   ]);
   if (!r.ok) avisarFalloConexion('Parametros (guardado)');
   return r.ok;
@@ -2432,8 +2514,10 @@ async function saveParams() {
   const val = parseInt(inp.value, 10);
   PARAMS.minClientes = (val && val > 0) ? val : 30;
   inp.value = PARAMS.minClientes;
-  await guardarParametrosEnSheet();
+  const ok = await guardarParametrosEnSheet();
   const msg = document.getElementById('save-ok-params');
+  msg.textContent = ok ? '✔ Guardado correctamente' : '❌ No se pudo guardar. Revisá tu conexión.';
+  msg.style.color = ok ? '' : '#C62828';
   msg.style.display = 'inline';
   setTimeout(() => msg.style.display = 'none', 2500);
 }
@@ -2529,6 +2613,7 @@ function limpiarFiltrosDoc() {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   docPendFiltro = '';
+  docAsigFiltro = 'asignados';
   renderDocTable();
 }
 
@@ -2566,6 +2651,8 @@ function docIndicesFiltrados() {
     if (!enRango(c.fechaProgramada, progDesde, progHasta)) return false;
     if (!enRango(c.proximaGestion, proxDesde, proxHasta)) return false;
     if (!pasaFiltroPendientes(c, docPendFiltro)) return false;
+    // El filtro de pendientes (hoy / vencidas) manda: muestra la fila esté o no en la bandeja.
+    if (!docPendFiltro && docAsigFiltro === 'asignados' && !enBandeja(c, 'documentacion')) return false;
     return true;
   });
 }
@@ -2574,17 +2661,18 @@ function renderDocTable() {
   const tbody = document.getElementById('tbody-doc');
   if (!tbody) return;
   renderPendFiltroChips('doc');
+  renderAsigFiltroChips('doc');
   actualizarPendientes();
   tbody.innerHTML = '';
   if (docClients.length === 0) {
-    tbody.innerHTML = '<tr id="doc-empty"><td colspan="10" class="empty" style="text-align:center;padding:20px;">📤 Sin base cargada. Cargue el archivo de clientes desde la pestaña "Cargar Datos".</td></tr>';
+    tbody.innerHTML = '<tr id="doc-empty"><td colspan="10" class="empty" style="text-align:center;padding:20px;">📤 Sin cartera cargada. Cargue la cartera de clientes desde "Cargar Datos".</td></tr>';
     actualizarContadorFiltro('doc-count', 0, 0);
     return;
   }
   const indices = docIndicesFiltrados();
 
   if (indices.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty" style="text-align:center;padding:20px;">🔎 ${docPendFiltro === 'hoy' ? 'No hay gestiones programadas para hoy.' : docPendFiltro === 'vencidas' ? 'No hay gestiones vencidas. 👌' : 'Ningún cliente coincide con la búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty" style="text-align:center;padding:20px;">🔎 ${docPendFiltro === 'hoy' ? 'No hay gestiones programadas para hoy.' : docPendFiltro === 'vencidas' ? 'No hay gestiones vencidas. 👌' : (docAsigFiltro === 'asignados' ? 'No hay clientes asignados que coincidan. Asigná el mes desde "Cargar Datos" o elegí "Todos".' : 'Ningún cliente coincide con la búsqueda.')}</td></tr>`;
     actualizarContadorFiltro('doc-count', 0, docClients.length);
     return;
   }
@@ -2740,6 +2828,7 @@ function limpiarFiltrosLineas() {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   linPendFiltro = '';
+  linAsigFiltro = 'asignados';
   renderLineasTable();
 }
 
@@ -2755,6 +2844,7 @@ function lineasIndicesFiltrados() {
     if (!enRango(c.fechaProgramada, progDesde, progHasta)) return false;
     if (!enRango(c.proximaGestion, proxDesde, proxHasta)) return false;
     if (!pasaFiltroPendientes(c, linPendFiltro)) return false;
+    if (!linPendFiltro && linAsigFiltro === 'asignados' && !enBandeja(c, 'lineas')) return false;
     return true;
   });
 }
@@ -2763,17 +2853,18 @@ function renderLineasTable() {
   const tbody = document.getElementById('tbody-lineas');
   if (!tbody) return;
   renderPendFiltroChips('lin');
+  renderAsigFiltroChips('lin');
   actualizarPendientes();
   tbody.innerHTML = '';
   if (lineaClients.length === 0) {
-    tbody.innerHTML = '<tr id="lin-empty"><td colspan="11" class="empty" style="text-align:center;padding:20px;">📤 Sin base cargada. Cargue el archivo de clientes desde la pestaña "Cargar Datos".</td></tr>';
+    tbody.innerHTML = '<tr id="lin-empty"><td colspan="11" class="empty" style="text-align:center;padding:20px;">📤 Sin cartera cargada. Cargue la cartera de clientes desde "Cargar Datos".</td></tr>';
     actualizarContadorFiltro('lin-count', 0, 0);
     return;
   }
   const indices = lineasIndicesFiltrados();
 
   if (indices.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="empty" style="text-align:center;padding:20px;">🔎 ${linPendFiltro === 'hoy' ? 'No hay gestiones programadas para hoy.' : linPendFiltro === 'vencidas' ? 'No hay gestiones vencidas. 👌' : 'Ningún cliente coincide con la búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="empty" style="text-align:center;padding:20px;">🔎 ${linPendFiltro === 'hoy' ? 'No hay gestiones programadas para hoy.' : linPendFiltro === 'vencidas' ? 'No hay gestiones vencidas. 👌' : (linAsigFiltro === 'asignados' ? 'No hay clientes asignados que coincidan. Asigná el mes desde "Cargar Datos" o elegí "Todos".' : 'Ningún cliente coincide con la búsqueda.')}</td></tr>`;
     actualizarContadorFiltro('lin-count', 0, lineaClients.length);
     return;
   }
@@ -2846,37 +2937,15 @@ function onLineasFieldChange(inp) {
 //  CARGA UNIFICADA DE DATOS (pestaña "Cargar Datos")
 //  Alimenta simultáneamente Actualización de Documentos y Líneas de Crédito
 // ═══════════════════════════════════════════════
-const UNIF_HEADER_MAP = {
-  codigoCliente:       ['CODIGOCLIENTE','CODCLIENTE','CODIGO'],
-  nroDocumento:        ['NRODEDOCUMENTOCIRUC','NRODOCUMENTOCIRUC','NRODOCUMENTO','NRODEDOCUMENTO','CIRUC','DOCUMENTO','CI','RUC'],
-  nombreCliente:       ['NOMBREDELCLIENTERAZONSOCIAL','NOMBRECLIENTERAZONSOCIAL','NOMBRECLIENTE','RAZONSOCIAL','CLIENTE'],
-  tipoCliente:         ['TIPODECLIENTE','TIPOCLIENTE'],
-  documentoActualizar: ['DOCUMENTOAACTUALIZAR','DOCUMENTOACTUALIZAR'],
-  lineaVigente:        ['LINEAVIGENTEGS','LINEAVIGENTE','LINEAACTUALGS','LINEAACTUAL']
-};
-
-function mapRowToUnifiedClient(headers, row) {
-  const obj = {};
-  headers.forEach((h, i) => {
-    const norm = normalizeHeader(h);
-    for (const key in UNIF_HEADER_MAP) {
-      if (obj[key] === undefined && UNIF_HEADER_MAP[key].includes(norm)) {
-        obj[key] = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : '';
-      }
-    }
-  });
-  return obj;
-}
-
 function descargarPlantillaUnificada() {
-  const headers = ['CODIGO CLIENTE','NRO. DOCUMENTO (CI/RUC)','NOMBRE DEL CLIENTE/RAZON SOCIAL','TIPO DE CLIENTE','DOCUMENTO A ACTUALIZAR','LINEA VIGENTE (GS)'];
-  const ejemplo  = ['C-001','1234567','Ejemplo S.A.','Jurídica','Balance General','50000000'];
+  const headers = ['CODIGO CLIENTE','NRO. DOCUMENTO (CI/RUC)','NOMBRE DEL CLIENTE/RAZON SOCIAL','TIPO DE CLIENTE','LINEA VIGENTE (GS)'];
+  const ejemplo  = ['C-001','1234567','Ejemplo S.A.','Jurídica','50000000'];
   const csv = headers.join(';') + '\n' + ejemplo.join(';');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'plantilla_base_clientes_unificada.csv';
+  a.download = 'plantilla_cartera_clientes.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -2895,134 +2964,548 @@ function onUnifFileSelected(input) {
   }
 }
 
-function cargarBaseUnificada() {
-  const fileInput = document.getElementById('unif-file-input');
-  const mesInput  = document.getElementById('unif-mes-gestion');
-  const statusEl  = document.getElementById('unif-upload-status');
+// ═══════════════════════════════════════════════
+//  v22 — CARTERA COMPLETA + ASIGNACIÓN MENSUAL
+//  1) "Cargar Cartera" cruza por Código Cliente y conserva el historial.
+//  2) "Asignar mes" toma de la cartera las cuentas elegibles hasta completar
+//     "Cuentas a asignar por mes" (PARAMS.minClientes), por separado para
+//     Documentos y para Líneas, y las reparte entre los días hábiles.
+//  3) Los días no laborables (Listas) no reciben asignaciones y, al guardarlos,
+//     se reprograman las gestiones ya asignadas que caigan en ellos.
+// ═══════════════════════════════════════════════
 
-  if (!fileInput.files.length) {
-    statusEl.textContent = '⚠️ Seleccione un archivo primero.';
-    statusEl.style.color = '#C62828';
+// ── Criterios de elegibilidad ──
+// Documentos: se asigna mientras el Tipo de Respuesta no sea "Docs. Actualizados" y
+// quede al menos un documento del catálogo (Listas → Documento a Actualizar) sin marcar.
+function docElegible(c) {
+  if (!c) return false;
+  if (String(c.tipoRespuesta || '').trim() === 'Docs. Actualizados') return false;
+  const catalogo = getListOptions('documentoTipo');
+  if (!catalogo.length) return true; // sin catálogo no hay forma de evaluar la segunda condición
+  const marcados = docSelectedArr(c);
+  return catalogo.some(d => !marcados.includes(d));
+}
+
+// Líneas: se asigna mientras el Tipo de Respuesta no sea "Mantiene LC Actual" ni "Nueva LC GS.".
+const RESPUESTAS_CIERRAN_LINEA = ['Mantiene LC Actual', 'Nueva LC GS.'];
+function lineaElegible(c) {
+  if (!c) return false;
+  return !RESPUESTAS_CIERRAN_LINEA.includes(String(c.tipoRespuesta || '').trim());
+}
+
+const AREAS_ASIGNACION = {
+  documentacion: { etiqueta: 'Actualización de Documentos', icono: '📄', datos: () => docClients,   elegible: docElegible },
+  lineas:        { etiqueta: 'Líneas de Crédito',           icono: '💳', datos: () => lineaClients, elegible: lineaElegible }
+};
+
+// Un cliente está en la bandeja si fue asignado y, o bien es del mes en curso,
+// o bien quedó abierto de un mes anterior (arrastre).
+function enBandeja(c, area, mesLabel) {
+  if (!c || !c.fechaProgramada) return false;
+  const mes = mesLabel || fmtMonth(new Date());
+  if ((c.mes || '') === mes) return true;
+  return AREAS_ASIGNACION[area].elegible(c);
+}
+
+// ── Filtro Asignados / Todos (pestañas 3 y 4) ──
+let docAsigFiltro = 'asignados';
+let linAsigFiltro = 'asignados';
+
+function setAsigFiltro(tabla, modo) {
+  if (tabla === 'doc') { docAsigFiltro = modo; renderDocTable(); }
+  else { linAsigFiltro = modo; renderLineasTable(); }
+}
+
+function renderAsigFiltroChips(tabla) {
+  const cont = document.getElementById(tabla === 'doc' ? 'doc-asig-chips' : 'lin-asig-chips');
+  if (!cont) return;
+  const actual = tabla === 'doc' ? docAsigFiltro : linAsigFiltro;
+  const area = tabla === 'doc' ? 'documentacion' : 'lineas';
+  const datos = AREAS_ASIGNACION[area].datos() || [];
+  const nAsig = datos.filter(c => enBandeja(c, area)).length;
+  const chip = (modo, etiqueta) =>
+    `<button type="button" class="mc-chip${actual === modo ? ' active' : ''}" onclick="setAsigFiltro('${tabla}','${modo}')">${etiqueta}</button>`;
+  cont.innerHTML = `<span class="filter-sep">Ver:</span>${chip('asignados', `Asignados (${nAsig})`)}${chip('todos', `Todos (${datos.length})`)}`;
+}
+
+// ── Días no laborables ──
+function getDiasNoLaborables() {
+  return (getListOptions('diasNoLaborables') || []).filter(d => d && d.desde);
+}
+
+function esDiaNoLaborable(iso) {
+  return getDiasNoLaborables().some(d => iso >= d.desde && iso <= (d.hasta || d.desde));
+}
+
+function esDiaHabil(fecha) {
+  const dow = fecha.getDay();
+  if (dow === 0 || dow === 6) return false;
+  return !esDiaNoLaborable(aISO(fecha));
+}
+
+// Días hábiles del mes, desde `desdeISO` (inclusive).
+function diasHabilesDelMes(year, monthIndex, desdeISO) {
+  const dias = [];
+  const d = new Date(year, monthIndex, 1);
+  while (d.getMonth() === monthIndex) {
+    if (aISO(d) >= (desdeISO || '') && esDiaHabil(d)) dias.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dias;
+}
+
+// Reparte `total` asignaciones entre `n` días de forma pareja a lo largo del mes.
+function cuposPorDia(total, n) {
+  const cupos = [];
+  for (let i = 0; i < n; i++) cupos.push(Math.floor((i + 1) * total / n) - Math.floor(i * total / n));
+  return cupos;
+}
+
+// Fecha de la última gestión (para la prioridad). '' si nunca se gestionó.
+function ultimaGestionISO(c) {
+  return aISO(parseDateInput(c.fechaGestion)) || '';
+}
+
+// ── Planificación (no modifica nada) ──
+// Devuelve qué clientes se asignarían, en qué fecha, y el resumen para la vista previa.
+function planificarAsignacion(area, year, monthIndex, cuentasMes, hoy) {
+  const cfg = AREAS_ASIGNACION[area];
+  const datos = cfg.datos() || [];
+  const mesLabel = fmtMonth(new Date(year, monthIndex, 1));
+  const hoyISO = aISO(hoy || new Date());
+  const primerISO = aISO(new Date(year, monthIndex, 1));
+  const desdeISO = hoyISO > primerISO ? hoyISO : primerISO;
+  const dias = diasHabilesDelMes(year, monthIndex, desdeISO);
+
+  const yaDelMes = [], arrastre = [], candidatos = [];
+  datos.forEach((c, idx) => {
+    if (c.fechaProgramada && (c.mes || '') === mesLabel) yaDelMes.push(idx);
+    else if (c.fechaProgramada && cfg.elegible(c)) arrastre.push(idx);
+    else if (!c.fechaProgramada && cfg.elegible(c)) candidatos.push(idx);
+  });
+
+  // Prioridad: 1) nunca asignados ni gestionados, 2) última gestión más antigua, 3) orden de la cartera.
+  candidatos.sort((a, b) => {
+    const ca = datos[a], cb = datos[b];
+    const na = (!ca.fechaGestion) ? 0 : 1, nb = (!cb.fechaGestion) ? 0 : 1;
+    if (na !== nb) return na - nb;
+    const ga = ultimaGestionISO(ca), gb = ultimaGestionISO(cb);
+    if (ga !== gb) return ga < gb ? -1 : 1;
+    return a - b;
+  });
+
+  const cupo = Math.max(0, cuentasMes - yaDelMes.length - arrastre.length);
+  const plan = { area, mesLabel, cuentasMes, dias, yaDelMes, arrastre, disponibles: candidatos.length, cupo, nuevos: [] };
+  if (!dias.length || !cupo) return plan;
+
+  // Carga de cada día con lo que ya está en la bandeja (asignados del mes + arrastre con fecha en el mes).
+  const cupos = cuposPorDia(cuentasMes, dias.length);
+  const isoDias = dias.map(aISO);
+  const carga = isoDias.map(() => 0);
+  yaDelMes.concat(arrastre).forEach(idx => {
+    const i = isoDias.indexOf(aISO(datos[idx].fechaProgramada));
+    if (i >= 0) carga[i]++;
+  });
+
+  candidatos.slice(0, cupo).forEach(idx => {
+    // Primer día con lugar según su cupo; si todos están llenos, el de menor carga.
+    let i = carga.findIndex((n, k) => n < cupos[k]);
+    if (i < 0) i = carga.indexOf(Math.min(...carga));
+    carga[i]++;
+    plan.nuevos.push({ idx, fecha: dias[i] });
+  });
+  plan.nuevos.sort((a, b) => a.fecha - b.fecha || a.idx - b.idx);
+  plan.cupos = cupos;
+  plan.carga = carga;
+  return plan;
+}
+
+// ── Vista previa ──
+let _planAsignacion = null;
+
+function previsualizarAsignacion() {
+  const cont = document.getElementById('asig-preview');
+  const mesVal = valorDe('asig-mes');
+  if (!mesVal) { cont.innerHTML = '<div class="asig-aviso">Elegí el mes a asignar.</div>'; return; }
+  const [year, month] = mesVal.split('-').map(Number);
+  const hoy = new Date();
+  if (year * 12 + (month - 1) < hoy.getFullYear() * 12 + hoy.getMonth()) {
+    cont.innerHTML = '<div class="asig-aviso">No se puede asignar un mes que ya terminó.</div>';
     return;
   }
-  if (!mesInput.value) {
-    statusEl.textContent = '⚠️ Seleccione el mes de gestión.';
-    statusEl.style.color = '#C62828';
+  if (!docClients.length && !lineaClients.length) {
+    cont.innerHTML = '<div class="asig-aviso">Todavía no hay cartera cargada.</div>';
     return;
   }
+  const cuentas = PARAMS.minClientes;
+  const planes = ['documentacion', 'lineas'].map(a => planificarAsignacion(a, year, month - 1, cuentas, hoy));
+  _planAsignacion = { year, monthIndex: month - 1, planes };
 
-  const file = fileInput.files[0];
-  const isCSV = /\.csv$/i.test(file.name);
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    let rows = [];
-    try {
-      if (isCSV) {
-        let text = e.target.result;
-        if (typeof text === 'string') text = text.replace(/^\uFEFF/, '');
-        rows = parseCSV(text);
-      } else {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-      }
-    } catch(err) {
-      statusEl.textContent = '❌ Error al leer el archivo: ' + err.message;
-      statusEl.style.color = '#C62828';
-      return;
+  const bloques = planes.map(p => {
+    const cfg = AREAS_ASIGNACION[p.area];
+    const datos = cfg.datos();
+    const avisos = [];
+    if (!p.dias.length) avisos.push('No quedan días hábiles en el mes (revisá los días no laborables).');
+    if (p.arrastre.length + p.yaDelMes.length >= p.cuentasMes) {
+      avisos.push(`La bandeja ya tiene ${p.arrastre.length + p.yaDelMes.length} cuentas (arrastre + asignadas este mes), que ocupan las ${p.cuentasMes} del mes: no se asignan cuentas nuevas.`);
+    } else if (p.disponibles < p.cupo) {
+      avisos.push(`Solo hay ${p.disponibles} cuentas elegibles sin asignar, menos que el cupo de ${p.cupo}.`);
     }
+    const porDia = {};
+    p.nuevos.forEach(n => { const k = fmtDate(n.fecha); porDia[k] = (porDia[k] || 0) + 1; });
+    const filasDias = Object.keys(porDia).map(k => `<tr><td>${k}</td><td>${porDia[k]}</td></tr>`).join('');
+    const filasCli = p.nuevos.map(n => {
+      const c = datos[n.idx];
+      return `<tr><td>${fmtDate(n.fecha)}</td><td>${c.codigoCliente || ''}</td><td>${c.nombreCliente || ''}</td><td>${c.fechaGestion ? 'Últ. gestión ' + c.fechaGestion : 'Nunca gestionado'}</td></tr>`;
+    }).join('');
+    return `
+      <div class="asig-bloque">
+        <h3>${cfg.icono} ${cfg.etiqueta}</h3>
+        <div class="asig-resumen">
+          <div class="asig-kpi"><b>${p.cuentasMes}</b><span>Cuentas a asignar por mes</span></div>
+          <div class="asig-kpi"><b>${p.arrastre.length}</b><span>Arrastradas abiertas de meses anteriores</span></div>
+          <div class="asig-kpi"><b>${p.yaDelMes.length}</b><span>Ya asignadas en ${p.mesLabel}</span></div>
+          <div class="asig-kpi"><b>${p.nuevos.length}</b><span>Nuevas a asignar</span></div>
+          <div class="asig-kpi"><b>${p.disponibles}</b><span>Elegibles sin asignar en la cartera</span></div>
+          <div class="asig-kpi"><b>${p.dias.length}</b><span>Días hábiles disponibles</span></div>
+        </div>
+        ${avisos.map(a => `<div class="asig-aviso">⚠️ ${a}</div>`).join('')}
+        ${p.nuevos.length ? `
+          <div style="display:grid;grid-template-columns:minmax(140px,200px) 1fr;gap:14px;align-items:start;">
+            <div><table class="asig-tabla"><thead><tr><th>Día</th><th>Nuevas</th></tr></thead><tbody>${filasDias}</tbody></table></div>
+            <div class="asig-scroll"><table class="asig-tabla"><thead><tr><th>Fecha</th><th>Código</th><th>Cliente</th><th>Motivo de prioridad</th></tr></thead><tbody>${filasCli}</tbody></table></div>
+          </div>` : ''}
+      </div>`;
+  }).join('');
 
-    if (!rows || rows.length < 2) {
-      statusEl.textContent = '⚠️ El archivo no contiene datos.';
-      statusEl.style.color = '#C62828';
-      return;
-    }
+  const hayNuevos = planes.some(p => p.nuevos.length);
+  cont.innerHTML = `
+    ${bloques}
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+      ${hayNuevos ? '<button class="btn-add-row" style="margin-top:0;background:var(--verde);" onclick="confirmarAsignacion()">✅ Confirmar asignación</button>' : ''}
+      <button class="btn-add-row btn-secondary" style="margin-top:0;" onclick="cancelarAsignacion()">Cerrar</button>
+      <span id="asig-status" style="font-size:11.5px;"></span>
+    </div>`;
+}
 
-    const headers  = rows[0];
-    const dataRows = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
-    const mapped   = dataRows.map(r => mapRowToUnifiedClient(headers, r)).filter(c => c.nombreCliente);
+function cancelarAsignacion() {
+  _planAsignacion = null;
+  const cont = document.getElementById('asig-preview');
+  if (cont) cont.innerHTML = '';
+}
 
-    if (mapped.length === 0) {
-      statusEl.innerHTML = '❌ No se pudo identificar la columna de <b>Nombre del Cliente/Razón Social</b>. '
-        + 'Encabezados detectados: <i>' + headers.map(h => String(h).trim()).join(', ') + '</i>. '
-        + 'Verifique que coincidan con la plantilla (📥 Descargar Plantilla) y que el delimitador sea punto y coma ( ; ).';
-      statusEl.style.color = '#C62828';
-      return;
-    }
-
-    const [year, month] = mesInput.value.split('-').map(Number);
-    const monthIndex = month - 1;
-    const mesLabel = fmtMonth(new Date(year, monthIndex, 1));
-
-    // Directorio único de clientes (para Líneas de Crédito, el selector de "Agregar Documento" y clientesBase)
-    const clienteKey = c => c.codigoCliente || c.nroDocumento || c.nombreCliente;
-    const seen = new Set();
-    const clientesUnicos = [];
-    mapped.forEach(c => {
-      const key = clienteKey(c);
-      if (!seen.has(key)) { seen.add(key); clientesUnicos.push(c); }
+async function confirmarAsignacion() {
+  if (!_planAsignacion) return;
+  const statusEl = document.getElementById('asig-status');
+  const { year, monthIndex } = _planAsignacion;
+  // Se vuelve a calcular con los datos actuales por si algo cambió mientras se miraba la vista previa.
+  const planes = ['documentacion', 'lineas'].map(a => planificarAsignacion(a, year, monthIndex, PARAMS.minClientes, new Date()));
+  planes.forEach(p => {
+    const datos = AREAS_ASIGNACION[p.area].datos();
+    p.nuevos.forEach(n => {
+      datos[n.idx].fechaProgramada = new Date(n.fecha.getFullYear(), n.fecha.getMonth(), n.fecha.getDate());
+      datos[n.idx].mes = p.mesLabel;
     });
+  });
+  if (statusEl) { statusEl.textContent = '⏳ Guardando…'; statusEl.style.color = '#E65100'; }
+  const rDoc = planes[0].nuevos.length ? await saveDocClientsToStorage() : { ok: true };
+  const rLin = planes[1].nuevos.length ? await saveLineaClientsToStorage() : { ok: true };
+  renderDocTable();
+  renderLineasTable();
+  if (rDoc.ok && rLin.ok) {
+    _planAsignacion = null;
+    document.getElementById('asig-preview').innerHTML =
+      `<div class="asig-aviso" style="background:var(--verde-claro);border-color:var(--verde);color:var(--verde);">✔ Asignación guardada: ${planes[0].nuevos.length} cuentas en Documentos y ${planes[1].nuevos.length} en Líneas de Crédito (${planes[0].mesLabel}).</div>`;
+  } else if (statusEl) {
+    statusEl.textContent = '❌ No se pudo guardar la asignación completa. Recargá la página y volvé a generar la vista previa.';
+    statusEl.style.color = '#C62828';
+  }
+}
 
-    // Una sola fecha programada por cliente único (se comparte entre todos sus documentos y su línea de crédito)
-    const fechasPorCliente = distributeDates(clientesUnicos.length, year, monthIndex);
-    const mapaFechaPorCliente = {};
-    clientesUnicos.forEach((c, i) => { mapaFechaPorCliente[clienteKey(c)] = fechasPorCliente[i] || null; });
+// ── Reprogramación por días no laborables ──
+// Mueve las gestiones asignadas, todavía sin Fecha de Gestión, cuya fecha programada
+// (de hoy en adelante) cae en un día no hábil, al día hábil del mismo mes con menos
+// carga; a igual carga, el más cercano a la fecha original.
+function planificarReprogramacion(area, hoy) {
+  const cfg = AREAS_ASIGNACION[area];
+  const datos = cfg.datos() || [];
+  const hoyISO = aISO(hoy || new Date());
+  const movs = [];
+  const cargaPorDia = {};
+  datos.forEach(c => {
+    if (c.fechaProgramada) { const k = aISO(c.fechaProgramada); cargaPorDia[k] = (cargaPorDia[k] || 0) + 1; }
+  });
+  datos.forEach((c, idx) => {
+    if (!c.fechaProgramada || c.fechaGestion || !cfg.elegible(c)) return;
+    const f = new Date(c.fechaProgramada);
+    const iso = aISO(f);
+    if (iso < hoyISO || esDiaHabil(f)) return;
+    let opciones = diasHabilesDelMes(f.getFullYear(), f.getMonth(), hoyISO);
+    if (!opciones.length) {
+      // Sin días hábiles en lo que queda del mes: primer día hábil siguiente.
+      const d = new Date(f); d.setDate(d.getDate() + 1);
+      while (!esDiaHabil(d)) d.setDate(d.getDate() + 1);
+      opciones = [d];
+    }
+    opciones.sort((a, b) => {
+      const ca = cargaPorDia[aISO(a)] || 0, cb = cargaPorDia[aISO(b)] || 0;
+      if (ca !== cb) return ca - cb;
+      return Math.abs(a - f) - Math.abs(b - f);
+    });
+    const destino = opciones[0];
+    cargaPorDia[iso]--;
+    cargaPorDia[aISO(destino)] = (cargaPorDia[aISO(destino)] || 0) + 1;
+    movs.push({ idx, desde: f, hasta: destino });
+  });
+  return movs;
+}
 
-    docClients = mapped
-      .filter(c => (c.documentoActualizar || '').trim() !== '')
-      .map(c => ({
-        codigoCliente:       c.codigoCliente || '',
-        nroDocumento:        c.nroDocumento || '',
-        nombreCliente:       c.nombreCliente || '',
-        tipoCliente:         c.tipoCliente || '',
-        documentoActualizar: c.documentoActualizar || '',
-        fechaProgramada:     mapaFechaPorCliente[clienteKey(c)] || null,
-        fechaGestion:        '',
-        tipoRespuesta:       'Sin Gestión',
-        proximaGestion:      '',
-        comentarios:         [],
-        mes:                 mesLabel
-      }));
+async function reprogramarPorDiasNoLaborables() {
+  const hoy = new Date();
+  const movDoc = planificarReprogramacion('documentacion', hoy);
+  const movLin = planificarReprogramacion('lineas', hoy);
+  if (!movDoc.length && !movLin.length) return { movidos: 0 };
+  const detalle = (movs, area) => movs.slice(0, 8).map(m => {
+    const c = AREAS_ASIGNACION[area].datos()[m.idx];
+    return `  • ${c.nombreCliente}: ${fmtDate(m.desde)} → ${fmtDate(m.hasta)}`;
+  }).join('\n');
+  const txt = `Hay gestiones programadas en días no laborables.\n\n` +
+    (movDoc.length ? `📄 Documentos: ${movDoc.length}\n${detalle(movDoc, 'documentacion')}${movDoc.length > 8 ? '\n  …' : ''}\n\n` : '') +
+    (movLin.length ? `💳 Líneas de Crédito: ${movLin.length}\n${detalle(movLin, 'lineas')}${movLin.length > 8 ? '\n  …' : ''}\n\n` : '') +
+    '¿Reprogramarlas a los días hábiles indicados?';
+  if (!confirm(txt)) return { movidos: 0, cancelado: true };
+  movDoc.forEach(m => { docClients[m.idx].fechaProgramada = m.hasta; });
+  movLin.forEach(m => { lineaClients[m.idx].fechaProgramada = m.hasta; });
+  const rDoc = movDoc.length ? await saveDocClientsToStorage() : { ok: true };
+  const rLin = movLin.length ? await saveLineaClientsToStorage() : { ok: true };
+  renderDocTable();
+  renderLineasTable();
+  return { movidos: movDoc.length + movLin.length, ok: rDoc.ok && rLin.ok };
+}
 
-    lineaClients = clientesUnicos.map(c => ({
-      codigoCliente:   c.codigoCliente || '',
-      nroDocumento:    c.nroDocumento || '',
-      nombreCliente:   c.nombreCliente || '',
-      tipoCliente:     c.tipoCliente || '',
-      lineaVigente:    c.lineaVigente || '',
-      fechaProgramada: mapaFechaPorCliente[clienteKey(c)] || null,
-      fechaGestion:    '',
-      tipoRespuesta:   'Sin Gestión',
-      proximaGestion:  '',
-      comentarios:     [],
-      nuevaLinea:      '',
-      mes:             mesLabel
-    }));
+// ── Tarjeta de días no laborables (Listas) ──
+function renderDiasNoLaborablesUI() {
+  const ul = document.getElementById('dnl-list');
+  if (!ul) return;
+  const items = getDiasNoLaborables().slice().sort((a, b) => a.desde.localeCompare(b.desde));
+  LISTS.diasNoLaborables.items = items;
+  const esc = s => String(s || '').replace(/</g, '&lt;');
+  const fmtISO = iso => { const [a, m, d] = iso.split('-'); return `${d}/${m}/${a}`; };
+  ul.innerHTML = items.length ? items.map((d, i) => {
+    const rango = (d.hasta && d.hasta !== d.desde) ? `${fmtISO(d.desde)} al ${fmtISO(d.hasta)}` : fmtISO(d.desde);
+    return `<li><span><b>${esc(d.tipo)}</b> — ${rango}${d.detalle ? ' · ' + esc(d.detalle) : ''}</span>
+      <button class="drop-del" onclick="quitarDiaNoLaborable(${i})" title="Quitar">×</button></li>`;
+  }).join('') : '<li style="background:#fff;color:#90A4AE;font-style:italic;">Sin días cargados.</li>';
+}
 
-    clientesBase = clientesUnicos.map(c => ({
-      codigoCliente:   c.codigoCliente || '',
-      nroDocumento:    c.nroDocumento || '',
-      nombreCliente:   c.nombreCliente || '',
-      tipoCliente:     c.tipoCliente || '',
-      fechaProgramada: mapaFechaPorCliente[clienteKey(c)] ? mapaFechaPorCliente[clienteKey(c)].toISOString() : null
-    }));
+function agregarDiaNoLaborable() {
+  const desde = valorDe('dnl-desde');
+  let hasta = valorDe('dnl-hasta');
+  if (!desde) { alert('Elegí la fecha "Desde".'); return; }
+  if (hasta && hasta < desde) { alert('"Hasta" no puede ser anterior a "Desde".'); return; }
+  if (!hasta) hasta = desde;
+  LISTS.diasNoLaborables.items = getDiasNoLaborables().concat([{
+    desde, hasta, tipo: valorDe('dnl-tipo') || 'Feriado', detalle: valorDe('dnl-detalle').trim()
+  }]);
+  ['dnl-desde', 'dnl-hasta', 'dnl-detalle'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderDiasNoLaborablesUI();
+}
 
-    saveDocClientsToStorage();
-    saveLineaClientsToStorage();
-    saveClientesBaseToStorage();
-    renderDocTable();
-    renderLineasTable();
+function quitarDiaNoLaborable(i) {
+  const items = getDiasNoLaborables().slice().sort((a, b) => a.desde.localeCompare(b.desde));
+  items.splice(i, 1);
+  LISTS.diasNoLaborables.items = items;
+  renderDiasNoLaborablesUI();
+}
 
-    statusEl.textContent = `✔ Base cargada correctamente: ${clientesUnicos.length} clientes (${docClients.length} documentos a actualizar). Se actualizaron "Actualización de Documentos" y "Líneas de Crédito".`;
-    statusEl.style.color = '#2E7D32';
-    fileInput.value = '';
-    const nameEl = document.getElementById('unif-file-name');
-    if (nameEl) { nameEl.textContent = 'Ningún archivo seleccionado'; nameEl.style.color = '#455A64'; }
+async function guardarDiasNoLaborables() {
+  await saveLists();
+  const msg = document.getElementById('save-ok-dnl');
+  const r = await reprogramarPorDiasNoLaborables();
+  if (msg) {
+    msg.textContent = r.movidos
+      ? (r.ok ? `✔ Guardado. Se reprogramaron ${r.movidos} gestiones.` : '⚠️ Días guardados, pero la reprogramación no se pudo guardar.')
+      : '✔ Guardado correctamente';
+    msg.style.color = (r.movidos && !r.ok) ? '#C62828' : '';
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 5000);
+  }
+}
+
+// ── Carga de cartera (cruce por Código Cliente) ──
+const UNIF_HEADER_MAP = {
+  codigoCliente:       ['CODIGOCLIENTE','CODCLIENTE','CODIGO'],
+  nroDocumento:        ['NRODEDOCUMENTOCIRUC','NRODOCUMENTOCIRUC','NRODOCUMENTO','NRODEDOCUMENTO','CIRUC','DOCUMENTO','CI','RUC'],
+  nombreCliente:       ['NOMBREDELCLIENTERAZONSOCIAL','NOMBRECLIENTERAZONSOCIAL','NOMBRECLIENTE','RAZONSOCIAL','CLIENTE'],
+  tipoCliente:         ['TIPODECLIENTE','TIPOCLIENTE'],
+  lineaVigente:        ['LINEAVIGENTEGS','LINEAVIGENTE','LINEAACTUALGS','LINEAACTUAL']
+};
+
+function mapRowToUnifiedClient(headers, row) {
+  const obj = {};
+  headers.forEach((h, i) => {
+    const norm = normalizeHeader(h);
+    for (const key in UNIF_HEADER_MAP) {
+      if (obj[key] === undefined && UNIF_HEADER_MAP[key].includes(norm)) {
+        obj[key] = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : '';
+      }
+    }
+  });
+  return obj;
+}
+
+const claveCodigo = c => String(c && c.codigoCliente !== undefined && c.codigoCliente !== null ? c.codigoCliente : '').trim();
+
+function filaDocNueva(c) {
+  return {
+    codigoCliente: c.codigoCliente, nroDocumento: c.nroDocumento || '', nombreCliente: c.nombreCliente || '',
+    tipoCliente: c.tipoCliente || '', documentoActualizar: '', fechaProgramada: null, fechaGestion: '',
+    tipoRespuesta: 'Sin Gestión', _estadoOrig: '', proximaGestion: '', comentarios: [], mes: ''
   };
+}
 
-  if (isCSV) reader.readAsText(file, 'UTF-8');
-  else reader.readAsArrayBuffer(file);
+function filaLineaNueva(c) {
+  return {
+    codigoCliente: c.codigoCliente, nroDocumento: c.nroDocumento || '', nombreCliente: c.nombreCliente || '',
+    tipoCliente: c.tipoCliente || '', lineaVigente: String(c.lineaVigente || '').replace(/[^\d]/g, ''),
+    fechaProgramada: null, fechaGestion: '', tipoRespuesta: 'Sin Gestión', _estadoOrig: '',
+    proximaGestion: '', nuevaLinea: '', comentarios: [], mes: ''
+  };
+}
+
+// Une la cartera del archivo con lo que ya hay. No toca las gestiones ni los comentarios.
+// Orden resultante: el del archivo, y al final los clientes que no vinieron (se conservan).
+function fusionarCartera(archivo) {
+  const docPorCod = new Map(docClients.map(c => [claveCodigo(c), c]));
+  const linPorCod = new Map(lineaClients.map(c => [claveCodigo(c), c]));
+  const res = { nuevos: 0, actualizados: 0, conservados: 0, docs: [], lineas: [] };
+  const vistos = new Set();
+
+  archivo.forEach(f => {
+    const k = claveCodigo(f);
+    vistos.add(k);
+    let d = docPorCod.get(k), l = linPorCod.get(k);
+    if (!d && !l) res.nuevos++; else res.actualizados++;
+    if (!d) d = filaDocNueva(f);
+    if (!l) l = filaLineaNueva(f);
+    // Datos maestros: se actualizan desde el archivo cuando vienen informados.
+    [d, l].forEach(x => {
+      if (f.nroDocumento) x.nroDocumento = f.nroDocumento;
+      if (f.nombreCliente) x.nombreCliente = f.nombreCliente;
+      if (f.tipoCliente) x.tipoCliente = f.tipoCliente;
+    });
+    const linea = String(f.lineaVigente || '').replace(/[^\d]/g, '');
+    if (linea) l.lineaVigente = linea;
+    res.docs.push(d);
+    res.lineas.push(l);
+  });
+
+  // Clientes que ya estaban y no vinieron en el archivo: se conservan, al final.
+  const restantes = [];
+  docClients.forEach(c => { const k = claveCodigo(c); if (!vistos.has(k)) { restantes.push(k); vistos.add(k); } });
+  lineaClients.forEach(c => { const k = claveCodigo(c); if (!vistos.has(k)) { restantes.push(k); vistos.add(k); } });
+  restantes.forEach(k => {
+    const d0 = docPorCod.get(k), l0 = linPorCod.get(k);
+    res.docs.push(d0 || filaDocNueva(l0));
+    res.lineas.push(l0 || filaLineaNueva(d0));
+  });
+  res.conservados = restantes.length;
+  return res;
+}
+
+function leerArchivoCartera(file) {
+  return new Promise((resolve, reject) => {
+    const isCSV = /\.csv$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+    reader.onload = e => {
+      try {
+        if (isCSV) {
+          let text = e.target.result;
+          if (typeof text === 'string') text = text.replace(/^﻿/, '');
+          resolve(parseCSV(text));
+        } else {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          resolve(XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' }));
+        }
+      } catch (err) { reject(err); }
+    };
+    if (isCSV) reader.readAsText(file, 'UTF-8');
+    else reader.readAsArrayBuffer(file);
+  });
+}
+
+async function cargarCartera() {
+  const fileInput = document.getElementById('unif-file-input');
+  const statusEl  = document.getElementById('unif-upload-status');
+  const aviso = (txt, color) => { statusEl.innerHTML = txt; statusEl.style.color = color; };
+
+  if (!fileInput.files.length) { aviso('⚠️ Seleccione un archivo primero.', '#C62828'); return; }
+
+  let rows;
+  try { rows = await leerArchivoCartera(fileInput.files[0]); }
+  catch (err) { aviso('❌ Error al leer el archivo: ' + err.message, '#C62828'); return; }
+  if (!rows || rows.length < 2) { aviso('⚠️ El archivo no contiene datos.', '#C62828'); return; }
+
+  const headers = rows[0];
+  const dataRows = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+  const mapeadas = dataRows.map(r => mapRowToUnifiedClient(headers, r));
+  if (!mapeadas.some(c => c.codigoCliente !== undefined)) {
+    aviso('❌ No se encontró la columna <b>Código Cliente</b>. Encabezados detectados: <i>' +
+      headers.map(h => String(h).trim()).join(', ') + '</i>. Use la plantilla (📥 Descargar Plantilla).', '#C62828');
+    return;
+  }
+
+  let sinCodigo = 0, repetidos = 0;
+  const vistos = new Set();
+  const archivo = [];
+  mapeadas.forEach(c => {
+    const k = claveCodigo(c);
+    if (!k) { sinCodigo++; return; }
+    if (vistos.has(k)) { repetidos++; return; }
+    vistos.add(k);
+    c.codigoCliente = k;
+    archivo.push(c);
+  });
+  if (!archivo.length) { aviso('❌ Ninguna fila tiene Código Cliente.', '#C62828'); return; }
+
+  const res = fusionarCartera(archivo);
+  const resumen = `Cartera del archivo: ${archivo.length} clientes.\n\n` +
+    `• Nuevos: ${res.nuevos}\n• Ya existentes (conservan gestiones y comentarios): ${res.actualizados}\n` +
+    `• En la plataforma pero no en el archivo (se conservan): ${res.conservados}\n` +
+    (sinCodigo ? `• Filas sin Código Cliente (descartadas): ${sinCodigo}\n` : '') +
+    (repetidos ? `• Códigos repetidos (se tomó la primera fila): ${repetidos}\n` : '') +
+    `\nLa carga NO asigna clientes: después usá "Asignar mes". ¿Confirmar?`;
+  if (!confirm(resumen)) { aviso('Carga cancelada. No se modificó nada.', '#455A64'); return; }
+
+  const docsAntes = docClients, linAntes = lineaClients, baseAntes = clientesBase;
+  docClients = res.docs;
+  lineaClients = res.lineas;
+  clientesBase = res.docs.map(c => ({
+    codigoCliente: c.codigoCliente || '', nroDocumento: c.nroDocumento || '',
+    nombreCliente: c.nombreCliente || '', tipoCliente: c.tipoCliente || '', fechaProgramada: null
+  }));
+
+  aviso('⏳ Guardando…', '#E65100');
+  const rDoc = await saveDocClientsToStorage();
+  const rLin = rDoc.ok ? await saveLineaClientsToStorage() : { ok: false };
+  if (!rDoc.ok || !rLin.ok) {
+    // Si no se pudo guardar, se vuelve a lo que había para no dejar la pantalla distinta de la planilla.
+    if (!rDoc.ok) { docClients = docsAntes; lineaClients = linAntes; clientesBase = baseAntes; }
+    renderDocTable(); renderLineasTable();
+    aviso(rDoc.ok
+      ? '⚠️ Documentos se guardó, pero Líneas de Crédito no. Recargá la página y volvé a cargar la cartera (el cruce por código evita duplicados).'
+      : '❌ No se pudo guardar la cartera. No se modificó nada. Revisá tu conexión y reintentá.', '#C62828');
+    return;
+  }
+  await saveClientesBaseToStorage();
+  renderDocTable();
+  renderLineasTable();
+  aviso(`✔ Cartera cargada: ${res.nuevos} nuevos, ${res.actualizados} existentes, ${res.conservados} conservados. ` +
+    `Ahora podés asignar el mes en "📅 Asignar mes".`, '#2E7D32');
+  fileInput.value = '';
+  onUnifFileSelected(fileInput);
 }
 
 // ═══════════════════════════════════════════════
@@ -3060,6 +3543,8 @@ function resetOperativo() {
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   docPendFiltro = '';
   linPendFiltro = '';
+  docAsigFiltro = 'asignados';
+  linAsigFiltro = 'asignados';
   actualizarPendientes();
 }
 
@@ -3119,8 +3604,8 @@ async function initApp() {
   (function initMesGestion() {
     const now = new Date();
     const mesVal = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    const mesInputUnif = document.getElementById('unif-mes-gestion');
-    if (mesInputUnif && !mesInputUnif.value) mesInputUnif.value = mesVal;
+    const mesInputAsig = document.getElementById('asig-mes');
+    if (mesInputAsig && !mesInputAsig.value) mesInputAsig.value = mesVal;
   })();
 }
 initApp();
