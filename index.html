@@ -1239,22 +1239,34 @@ function avisarDesfase(hoja) {
   const banner = document.getElementById('error-banner');
   if (banner) {
     banner.style.display = 'block';
-    banner.innerHTML = '⛔ <b>No se guardó.</b> Otra persona modificó la planilla (' + hoja +
-      ') desde que se abrió esta pantalla. Si se guardara ahora, se perderían esos cambios. ' +
+    banner.innerHTML = '⛔ <b>No se guardó.</b> La planilla (' + hoja +
+      ') cambió desde que se abrió esta pantalla: otra persona, u otra pestaña o ventana de la plataforma abierta en esta computadora. Si se guardara ahora, se perderían esos cambios. ' +
       '<button type="button" onclick="location.reload()" style="margin-left:8px;padding:4px 10px;cursor:pointer;">🔄 Recargar ahora</button>';
   }
   if (!_avisoDesfaseAbierto) {
     _avisoDesfaseAbierto = true;
-    alert('⛔ No se guardó.\n\nOtra persona modificó la planilla desde que se abrió esta pantalla. ' +
+    alert('⛔ No se guardó.\n\nLa planilla cambió desde que se abrió esta pantalla (otra persona, u otra pestaña o ventana de la plataforma). ' +
           'Guardar ahora borraría su trabajo.\n\nRecargá la página (se pierde solo lo que acabás de tipear) ' +
           'y volvé a cargar el cambio.');
     setTimeout(() => { _avisoDesfaseAbierto = false; }, 30000);
   }
 }
 
+// v24: los guardados de una misma hoja se hacen EN FILA, uno detrás del otro.
+// Antes, si se guardaba un cambio mientras el guardado anterior seguía en curso
+// (con cientos de filas tarda varios segundos), el segundo encontraba la hoja ya
+// modificada por el primero y lo tomaba por "otra persona": falso aviso y cambio no guardado.
+const _colaGuardado = {};
+function apiGuardarSiNoCambio(hoja, filas) {
+  const previo = _colaGuardado[hoja] || Promise.resolve();
+  const actual = previo.catch(() => {}).then(() => _guardarSiNoCambio(hoja, filas));
+  _colaGuardado[hoja] = actual;
+  return actual;
+}
+
 // Guarda solo si la hoja no cambió desde que esta pestaña la cargó.
 // Devuelve {ok, desfase} — desfase: true si se abortó por conflicto.
-async function apiGuardarSiNoCambio(hoja, filas) {
+async function _guardarSiNoCambio(hoja, filas) {
   const actuales = await apiListar(hoja);
   if (actuales === null) return { ok: false, error: 'sin conexión' }; // no se pudo verificar: no se escribe
   const huellaPrevia = HUELLAS[hoja];
