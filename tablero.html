@@ -655,26 +655,66 @@ function calcularIndicadorCarpetas(mes) {
   return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Carpetas cuya Resolución del Analista es coherente con su Observación (Aprobado Sin Observaciones + SIN OBSERVACIONES; Aprobado con Excepción + FALTA DOCUMENTACIÓN; Rechazado + NO CALIFICA) / Total de carpetas ingresadas en el mes (según Fecha Ingreso Docs.). Las combinaciones incoherentes y las carpetas todavía abiertas no suman y restan resultado.' };
 }
 
+// ═══════════════════════════════════════════════
+//  INDICADORES 2 y 4 POR ASIGNACIONES DEL MES  (v3 del tablero, CRM v23)
+//  Denominador: cuentas asignadas en el mes evaluado (nuevas, reasignadas y
+//  arrastradas), según el historial de asignaciones (columna historialJSON).
+//  Numerador: las de ese denominador cuyo ciclo cerró con Fecha de Gestión
+//  dentro del mes evaluado. Registros sin historial: se usa el campo "mes".
+// ═══════════════════════════════════════════════
+const CIERRE_DOCUMENTOS = ['Docs. Actualizados'];
+const CIERRE_LINEAS = ['Nueva LC GS.', 'Mantiene LC Actual'];
+
+function historialDe(r) {
+  try {
+    const h = r.historialJSON ? JSON.parse(r.historialJSON) : null;
+    if (h && Array.isArray(h.asignaciones)) return h;
+  } catch (e) { /* sin historial válido */ }
+  return null;
+}
+
+// [{fila, cierre:{tipoRespuesta, fechaGestion, estado}}] de las cuentas asignadas en el mes.
+function asignacionesDelMes(filas, mes) {
+  const out = [];
+  (filas || []).forEach(r => {
+    const actual = { tipoRespuesta: r.tipoRespuesta, fechaGestion: r.fechaGestion || r.fechaRevision, estado: r.estado };
+    const h = historialDe(r);
+    if (h && h.asignaciones.length) {
+      const a = h.asignaciones.find(x => x.mes === mes);
+      if (!a) return;
+      const cicloActual = h.ciclo || 1;
+      const cierre = (a.ciclo && a.ciclo !== cicloActual)
+        ? ((h.ciclos || []).find(c => c.ciclo === a.ciclo) || {})
+        : actual;
+      out.push({ fila: r, cierre });
+    } else if ((r.mes || '') === mes) {
+      out.push({ fila: r, cierre: actual });
+    }
+  });
+  return out;
+}
+
+function cerroEnMes(cierre, mes, respuestas, estadosViejos) {
+  const tr = String(cierre.tipoRespuesta || '').trim();
+  const cerrado = tr ? respuestas.includes(tr) : estadosViejos.includes(cierre.estado);
+  if (!cerrado) return false;
+  const f = parseFechaTexto(cierre.fechaGestion);
+  const { mesIdx, anio } = parseMesLabelStr(mes);
+  return !!f && f.getMonth() === mesIdx && f.getFullYear() === anio;
+}
+
 function calcularIndicadorDocumentos(mes) {
-  const filtradas = dataDocClients.filter(d => (d.mes || '') === mes);
-  const denom = filtradas.length;
-  const num = filtradas.filter(d => {
-    const tr = String(d.tipoRespuesta || '').trim();
-    if (tr) return tr === 'Docs. Actualizados';
-    return d.estado === 'FINALIZADO'; // respaldo: registro aún no reguardado
-  }).length;
-  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Clientes programados en el mes con Tipo de Respuesta = "Docs. Actualizados"' };
+  const asig = asignacionesDelMes(dataDocClients, mes);
+  const denom = asig.length;
+  const num = asig.filter(a => cerroEnMes(a.cierre, mes, CIERRE_DOCUMENTOS, ['FINALIZADO'])).length;
+  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Clientes asignados en el mes (nuevos, reasignados y arrastrados) que cerraron con Tipo de Respuesta = "Docs. Actualizados" y Fecha de Gestión dentro del mes / Total asignados en el mes' };
 }
 
 function calcularIndicadorLineas(mes) {
-  const filtradas = dataLineaClients.filter(d => (d.mes || '') === mes);
-  const denom = filtradas.length;
-  const num = filtradas.filter(d => {
-    const tr = String(d.tipoRespuesta || '').trim();
-    if (tr) return tr === 'Nueva LC GS.' || tr === 'Mantiene LC Actual';
-    return d.estado === 'FINALIZADO' || d.estado === 'MANTIENE LC'; // respaldo
-  }).length;
-  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Clientes programados en el mes con Tipo de Respuesta = "Nueva LC GS." o "Mantiene LC Actual"' };
+  const asig = asignacionesDelMes(dataLineaClients, mes);
+  const denom = asig.length;
+  const num = asig.filter(a => cerroEnMes(a.cierre, mes, CIERRE_LINEAS, ['FINALIZADO', 'MANTIENE LC'])).length;
+  return { resultado: denom > 0 ? num/denom : null, num, denom, detalle: 'Clientes asignados en el mes (nuevos, reasignados y arrastrados) que cerraron con "Nueva LC GS." o "Mantiene LC Actual" y Fecha de Gestión dentro del mes / Total asignados en el mes' };
 }
 
 function calcularIndicadorTiempos(mes) {

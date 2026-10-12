@@ -396,6 +396,12 @@
   .dnl-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
   .dnl-row input, .dnl-row select { border:1px solid #90CAF9; border-radius:4px; padding:5px 8px; font-size:12px; font-family:inherit; color:var(--azul); background:#fff; }
   .dnl-list { list-style:none; padding:0; margin-top:10px; display:flex; flex-direction:column; gap:4px; }
+  .doc-estado-row { display:grid; grid-template-columns:1fr 130px; gap:8px; align-items:center; font-size:12.5px; color:#263238; padding:2px 0; }
+  .doc-estado-row small { display:block; font-size:10.5px; color:#78909C; }
+  .doc-estado-row select { border:1px solid #90CAF9; border-radius:4px; padding:3px 4px; font-size:12px; font-family:inherit; }
+  .doc-estado-row select.est-pend { background:#FFF8E1; color:#E65100; }
+  .doc-estado-row select.est-act  { background:var(--verde-claro); color:var(--verde); }
+  .doc-estado-row select.est-na   { background:var(--gris-claro); color:#607D8B; }
   .dnl-list li { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 10px; background:var(--gris-claro); border:1px solid var(--borde); border-radius:4px; font-size:12px; color:#37474F; }
 </style>
 </head>
@@ -678,7 +684,7 @@
   <div class="card">
     <div class="card-header">
       <h2>📅 Asignar mes</h2>
-      <p>Asigna a la bandeja de la analista la cantidad de cuentas definida en <b>Cuentas a asignar por mes</b>, repartidas entre los días hábiles del mes (sin sábados, domingos ni días no laborables cargados en Listas). Se calcula por separado para <b>Actualización de Documentos</b> y para <b>Líneas de Crédito</b>.</p>
+      <p>Asigna a la bandeja de la analista la cantidad de cuentas definida en <b>Cuentas a asignar por mes</b>, repartidas entre los días hábiles del mes (sin sábados, domingos ni días no laborables cargados en Listas). Se calcula por separado para <b>Actualización de Documentos</b> y para <b>Líneas de Crédito</b>. Vuelven a asignarse los clientes con documentos <b>Pendientes</b> y los que cumplieron <b>180 días</b> desde la última actualización (Documentos) o desde el cierre (Líneas).</p>
     </div>
     <div class="card-body">
       <div class="upload-row">
@@ -902,11 +908,11 @@ function buildIconCellHTML(tipo, idx) {
 function buildEyeCellHTML(idx) {
   const c = docClients[idx];
   if (!c) return '';
-  const selected = docSelectedArr(c);
-  const label = selected.length ? `${selected.length} doc.` : 'Sin elegir';
+  const pend = docsPendientes(c).length;
+  const label = pend ? `${pend} pend.` : '✔ al día';
   return `
     <div class="icon-cell">
-      <button type="button" class="icon-btn" title="Ver / seleccionar documentos" onclick="openCommentsModal('documentacion',${idx})">👁</button>
+      <button type="button" class="icon-btn" title="Ver / marcar el estado de cada documento" onclick="openCommentsModal('documentacion',${idx})">👁</button>
       <span style="font-size:11px;color:#455A64;white-space:nowrap;">${label}</span>
     </div>`;
 }
@@ -937,13 +943,17 @@ function closeCommentsModal() {
   modalCtx = null;
 }
 
-async function onModalDocCheck(cb) {
+// v23: cada documento tiene estado Pendiente / Actualizado / No aplica.
+// Al marcarlo Actualizado se registra la fecha (la Fecha de Gestión de la fila, o hoy),
+// desde la que corren los 180 días de vigencia.
+async function onModalDocEstado(sel) {
   if (!modalCtx || modalCtx.tipo !== 'documentacion') return;
   const idx = modalCtx.idx;
-  const panel = cb.closest('.modal-doc-list');
-  const checked = Array.from(panel.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
-  docClients[idx].documentoActualizar = checked.join('; ');
+  const c = docClients[idx];
+  const nombre = sel.dataset.doc;
+  setEstadoDoc(c, nombre, sel.value);
   refreshRowCommentCell('documentacion', idx);
+  renderCommentsModal();
   const resultado = await saveDocClientsToStorage();
   if (!resultado || !resultado.ok) {
     alert('⚠️ La selección de documentos no se pudo confirmar en la planilla compartida (falló la conexión). Volvé a intentarlo.');
@@ -1057,17 +1067,23 @@ function renderCommentsModal() {
 
   let docsHTML = '';
   if (tipo === 'documentacion') {
-    const selected = docSelectedArr(row);
-    const items = getListOptions('documentoTipo');
-    const checks = items.map(it => {
-      const checked = selected.includes(it) ? 'checked' : '';
-      const safeIt = it.replace(/"/g,'&quot;');
-      return `<label class="modal-doc-item"><input type="checkbox" value="${safeIt}" ${checked} onchange="onModalDocCheck(this)"> ${it}</label>`;
+    const items = docsAplicables(row);
+    const clase = { 'Pendiente': 'est-pend', 'Actualizado': 'est-act', 'No aplica': 'est-na' };
+    const filas = items.map(it => {
+      const est = estadoDoc(row, it);
+      const info = (row.docs || {})[it] || {};
+      const safeIt = String(it).replace(/"/g,'&quot;');
+      const vence = (est === 'Actualizado' && info.f) ? `<small>Actualizado el ${fmtDate(parseDateInput(info.f))} · vuelve a pedirse el ${fmtDate(parseDateInput(sumarDiasISO(info.f, DIAS_VIGENCIA_DOC)))}</small>` : '';
+      return `<div class="doc-estado-row"><span>${it}${vence}</span>
+        <select class="${clase[est]}" data-doc="${safeIt}" onchange="onModalDocEstado(this)">
+          ${ESTADOS_DOC.map(e => `<option ${e === est ? 'selected' : ''}>${e}</option>`).join('')}
+        </select></div>`;
     }).join('');
+    const lista = { fisica: 'Persona Física', juridica: 'Persona Jurídica' }[tipoClienteClave(row)] || 'Lista general';
     docsHTML = `
       <div class="modal-section">
-        <h4>📄 Documentos a actualizar</h4>
-        <div class="modal-doc-list">${checks || '<div class="doc-multisel-empty">Sin documentos configurados en Listas.</div>'}</div>
+        <h4>📄 Documentos (${lista})</h4>
+        <div class="modal-doc-list">${filas || '<div class="doc-multisel-empty">Sin documentos configurados en Listas.</div>'}</div>
       </div>`;
   }
 
@@ -1573,7 +1589,8 @@ const EXPORT_CONFIG = {
       'Tipo de Respuesta Últ. Gestión': c.tipoRespuesta || '',
       'Fecha de Próxima Gestión': c.proximaGestion || '',
       'Gestión Vencida': gestionVencida(c) ? 'SÍ' : 'NO',
-      'Documento a Actualizar': c.documentoActualizar || '',
+      'Documentos Pendientes': docsPendientes(c).join('; '),
+      'Documentos Actualizados': docsAplicables(c).filter(n => estadoDoc(c, n) === 'Actualizado').join('; '),
       'Comentarios': comentariosATexto(c.comentarios)
     })
   },
@@ -1655,8 +1672,19 @@ const DEFAULT_LISTS = {
     items: ["Sin Gestión","Solicitado al cliente","Solicitado al vendedor","Sin retorno","Mantiene LC Actual","Nueva LC GS.","Reprogramar"]
   },
   documentoTipo: {
-    label: "Documento a Actualizar (ACTUALIZACIÓN DE DOCUMENTOS)",
+    label: "Documentos — Lista general, si el cliente no tiene Tipo de Cliente (ACTUALIZACIÓN DE DOCUMENTOS)",
     items: ["Balance General","Estados Financieros","Cédula de Identidad","RUC Actualizado","Referencias Comerciales","Constancia de Domicilio","Patente Comercial"]
+  },
+  // v23: documentos que corresponden según el Tipo de Cliente de la cartera.
+  documentoTipoFisica: {
+    label: "Documentos — Persona Física (ACTUALIZACIÓN DE DOCUMENTOS)",
+    items: [],
+    semillaDe: 'documentoTipo'
+  },
+  documentoTipoJuridica: {
+    label: "Documentos — Persona Jurídica (ACTUALIZACIÓN DE DOCUMENTOS)",
+    items: [],
+    semillaDe: 'documentoTipo'
   },
   usuarios: {
     label: "Usuarios del Sistema (GENERAL)",
@@ -1828,6 +1856,7 @@ async function loadLists() {
       return;
     }
     if (filas && filas.length) {
+      const clavesEnPlanilla = new Set(filas.map(f => f.clave));
       filas.forEach(f => {
         if (LISTS[f.clave]) {
           try {
@@ -1836,6 +1865,9 @@ async function loadLists() {
           } catch(e) { /* fila corrupta: se ignora, queda el default */ }
         }
       });
+      for (const k in LISTS) {
+        if (LISTS[k].semillaDe && !clavesEnPlanilla.has(k)) LISTS[k].items = LISTS[LISTS[k].semillaDe].items.slice();
+      }
     } else {
       // La hoja "Listas" todavía está vacía (primera vez): usar lo que haya en este navegador como semilla
       cargarListsDesdeLocalStorage();
@@ -2583,10 +2615,14 @@ async function loadDocClientsFromStorage() {
   const datos = await apiListar('DocClients');
   if (datos !== null) registrarHuella('DocClients', datos);
   if (datos === null) { avisarFalloConexion('Actualización de Documentos'); docClients = []; return; }
+  verificarColumnaHistorial('documentacion', 'DocClients', datos);
   docClients = datos.map(d => {
     let comentarios = [];
     try { comentarios = d.comentariosJSON ? JSON.parse(d.comentariosJSON) : []; } catch(e) { comentarios = []; }
+    const tipoResp = migrarTipoRespuestaDoc(d);
     return {
+      docs: parseDocsEstado(d.documentoActualizar, tipoResp, d.fechaGestion),
+      historial: parseHistorial(d.historialJSON, d),
       codigoCliente: d.codigoCliente || '',
       nroDocumento: d.nroDocumento || '',
       nombreCliente: d.nombreCliente || '',
@@ -2623,12 +2659,13 @@ async function saveDocClientsToStorage() {
     nroDocumento: c.nroDocumento || '',
     nombreCliente: c.nombreCliente || '',
     tipoCliente: c.tipoCliente || '',
-    documentoActualizar: c.documentoActualizar || '',
+    documentoActualizar: (c.docs && Object.keys(c.docs).length) ? JSON.stringify(c.docs) : '',
     fechaProgramada: c.fechaProgramada ? c.fechaProgramada.toISOString() : null,
     fechaGestion: c.fechaGestion || '',
     tipoRespuesta: c.tipoRespuesta || 'Sin Gestión',
     proximaGestion: c.proximaGestion || '',
     mes: c.mes || '',
+    historialJSON: JSON.stringify(c.historial || historialVacio()),
     comentariosJSON: JSON.stringify(c.comentarios || []),
     // columna vieja, solo por compatibilidad
     estado: estadoCompat(c.tipoRespuesta, c._estadoOrig, MAPA_RESPUESTA_DOC_A_VIEJO)
@@ -2777,10 +2814,12 @@ async function loadLineaClientsFromStorage() {
   const datos = await apiListar('LineaClients');
   if (datos !== null) registrarHuella('LineaClients', datos);
   if (datos === null) { avisarFalloConexion('Líneas de Crédito'); lineaClients = []; return; }
+  verificarColumnaHistorial('lineas', 'LineaClients', datos);
   lineaClients = datos.map(d => {
     let comentarios = [];
     try { comentarios = d.comentariosJSON ? JSON.parse(d.comentariosJSON) : []; } catch(e) { comentarios = []; }
     return {
+      historial: parseHistorial(d.historialJSON, d),
       codigoCliente: d.codigoCliente || '',
       nroDocumento: d.nroDocumento || '',
       nombreCliente: d.nombreCliente || '',
@@ -2812,6 +2851,7 @@ async function saveLineaClientsToStorage() {
     proximaGestion: c.proximaGestion || '',
     nuevaLinea: c.nuevaLinea || '',
     mes: c.mes || '',
+    historialJSON: JSON.stringify(c.historial || historialVacio()),
     comentariosJSON: JSON.stringify(c.comentarios || []),
     // columnas viejas, solo por compatibilidad
     estado: estadoCompat(c.tipoRespuesta, c._estadoOrig, MAPA_RESPUESTA_LINEA_A_VIEJO),
@@ -2974,38 +3014,198 @@ function onUnifFileSelected(input) {
 //     se reprograman las gestiones ya asignadas que caigan en ellos.
 // ═══════════════════════════════════════════════
 
-// ── Criterios de elegibilidad ──
-// Documentos: se asigna mientras el Tipo de Respuesta no sea "Docs. Actualizados" y
-// quede al menos un documento del catálogo (Listas → Documento a Actualizar) sin marcar.
-function docElegible(c) {
-  if (!c) return false;
-  if (String(c.tipoRespuesta || '').trim() === 'Docs. Actualizados') return false;
-  const catalogo = getListOptions('documentoTipo');
-  if (!catalogo.length) return true; // sin catálogo no hay forma de evaluar la segunda condición
-  const marcados = docSelectedArr(c);
-  return catalogo.some(d => !marcados.includes(d));
+// ── Criterios de elegibilidad (v23) ──
+// Documentos: cada documento que corresponde al cliente (según su Tipo de Cliente) tiene
+// estado Pendiente / Actualizado / No aplica; sin estado cuenta como Pendiente.
+// Un ciclo está ABIERTO mientras el Tipo de Respuesta no sea el de cierre. Un cliente
+// CERRADO vuelve a asignarse si tiene documentos Pendientes, o si pasaron 180 días desde
+// que se actualizó algún documento (Documentos) o desde el cierre (Líneas).
+const ESTADOS_DOC = ['Pendiente', 'Actualizado', 'No aplica'];
+const DIAS_VIGENCIA_DOC = 180;
+const DIAS_VIGENCIA_LINEA = 180;
+const RESPUESTAS_CIERRAN_LINEA = ['Mantiene LC Actual', 'Nueva LC GS.'];
+
+function sumarDiasISO(iso, n) {
+  const [a, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  return aISO(new Date(a, m - 1, d + n));
 }
 
-// Líneas: se asigna mientras el Tipo de Respuesta no sea "Mantiene LC Actual" ni "Nueva LC GS.".
-const RESPUESTAS_CIERRAN_LINEA = ['Mantiene LC Actual', 'Nueva LC GS.'];
-function lineaElegible(c) {
-  if (!c) return false;
-  return !RESPUESTAS_CIERRAN_LINEA.includes(String(c.tipoRespuesta || '').trim());
+// 'fisica' | 'juridica' | '' según el Tipo de Cliente de la cartera.
+function tipoClienteClave(c) {
+  const t = normalizeHeader(c && c.tipoCliente);
+  if (!t) return '';
+  if (t === 'F' || t.includes('FISIC')) return 'fisica';
+  if (t === 'J' || t.includes('JURID')) return 'juridica';
+  return '';
+}
+
+// Documentos que corresponden al cliente: lista de su tipo; si no tiene tipo
+// (o la lista de su tipo está vacía), la lista general.
+function docsAplicables(c) {
+  const k = tipoClienteClave(c);
+  const porTipo = k === 'fisica' ? getListOptions('documentoTipoFisica')
+                : k === 'juridica' ? getListOptions('documentoTipoJuridica') : [];
+  return porTipo.length ? porTipo : getListOptions('documentoTipo');
+}
+
+// Lee la columna documentoActualizar. Formato v23: JSON {documento: {e, f}}.
+// Formato anterior ("A; B"): eran los documentos marcados. Si la gestión cerró como
+// "Docs. Actualizados" se toman como Actualizados en la Fecha de Gestión; si no, Pendientes.
+function parseDocsEstado(raw, tipoRespuesta, fechaGestion) {
+  const s = String(raw || '').trim();
+  if (!s) return {};
+  if (s.startsWith('{')) {
+    try { const o = JSON.parse(s); if (o && typeof o === 'object') return o; } catch (e) { /* formato viejo */ }
+  }
+  const cerrado = String(tipoRespuesta || '').trim() === 'Docs. Actualizados';
+  const f = aISO(parseDateInput(fechaGestion)) || '';
+  const o = {};
+  s.split(';').map(x => x.trim()).filter(Boolean).forEach(n => {
+    o[n] = cerrado ? { e: 'Actualizado', f } : { e: 'Pendiente' };
+  });
+  return o;
+}
+
+function estadoDoc(c, nombre) {
+  const x = (c && c.docs || {})[nombre];
+  return (x && ESTADOS_DOC.includes(x.e)) ? x.e : 'Pendiente';
+}
+
+function setEstadoDoc(c, nombre, estado) {
+  if (!c.docs) c.docs = {};
+  if (estado === 'Actualizado') {
+    c.docs[nombre] = { e: 'Actualizado', f: aISO(parseDateInput(c.fechaGestion)) || aISO(new Date()) };
+  } else {
+    c.docs[nombre] = { e: estado };
+  }
+}
+
+function docsPendientes(c) {
+  return docsAplicables(c).filter(n => estadoDoc(c, n) === 'Pendiente');
+}
+
+// Documentos Actualizados cuya vigencia de 180 días ya se cumplió a la fecha `refISO`.
+function docsVencidos(c, refISO) {
+  return docsAplicables(c).filter(n => {
+    const x = (c.docs || {})[n];
+    if (!x || x.e !== 'Actualizado') return false;
+    const f = x.f || aISO(parseDateInput(c.fechaGestion));
+    return !!f && sumarDiasISO(f, DIAS_VIGENCIA_DOC) <= refISO;
+  });
+}
+
+function fechaCierreLinea(c) {
+  return aISO(parseDateInput(c.fechaGestion)) || (c.fechaProgramada ? aISO(c.fechaProgramada) : '');
 }
 
 const AREAS_ASIGNACION = {
-  documentacion: { etiqueta: 'Actualización de Documentos', icono: '📄', datos: () => docClients,   elegible: docElegible },
-  lineas:        { etiqueta: 'Líneas de Crédito',           icono: '💳', datos: () => lineaClients, elegible: lineaElegible }
+  documentacion: {
+    etiqueta: 'Actualización de Documentos', icono: '📄', datos: () => docClients,
+    abierto: c => String(c.tipoRespuesta || '').trim() !== 'Docs. Actualizados',
+    reasignable: (c, refISO) => docsPendientes(c).length > 0 || docsVencidos(c, refISO).length > 0,
+    motivo: (c, refISO) => {
+      if (nuncaAsignado(c)) return 'Nunca asignado';
+      const pend = docsPendientes(c), venc = docsVencidos(c, refISO);
+      const partes = [];
+      if (pend.length) partes.push(`Pendientes: ${pend.join(', ')}`);
+      if (venc.length) partes.push(`Cumplieron 180 días: ${venc.join(', ')}`);
+      return partes.join(' · ') || 'Reasignación';
+    }
+  },
+  lineas: {
+    etiqueta: 'Líneas de Crédito', icono: '💳', datos: () => lineaClients,
+    abierto: c => !RESPUESTAS_CIERRAN_LINEA.includes(String(c.tipoRespuesta || '').trim()),
+    reasignable: (c, refISO) => {
+      const f = fechaCierreLinea(c);
+      return !!f && sumarDiasISO(f, DIAS_VIGENCIA_LINEA) <= refISO;
+    },
+    motivo: c => nuncaAsignado(c) ? 'Nunca asignado'
+      : `Cumplió 180 días desde el cierre (${c.tipoRespuesta}, ${fmtDate(parseDateInput(fechaCierreLinea(c)))})`
+  }
 };
 
+// Compatibilidad: "elegible hoy" = ciclo abierto o cerrado pero para reasignar.
+function docElegible(c) { const a = AREAS_ASIGNACION.documentacion; return a.abierto(c) || a.reasignable(c, aISO(new Date())); }
+function lineaElegible(c) { const a = AREAS_ASIGNACION.lineas; return a.abierto(c) || a.reasignable(c, aISO(new Date())); }
+
+// ── Historial de asignaciones (columna historialJSON) ──
+// { ciclo: n, asignaciones: [{mes, f, t: 'nueva'|'arrastre'|'reasignacion', ciclo}],
+//   ciclos: [{ciclo, tipoRespuesta, fechaGestion, nuevaLinea?}] }  (ciclos = los ya cerrados)
+function historialVacio() { return { ciclo: 1, asignaciones: [], ciclos: [] }; }
+
+function parseHistorial(raw, d) {
+  try {
+    const h = raw ? JSON.parse(raw) : null;
+    if (h && Array.isArray(h.asignaciones)) {
+      return { ciclo: h.ciclo || 1, asignaciones: h.asignaciones, ciclos: Array.isArray(h.ciclos) ? h.ciclos : [] };
+    }
+  } catch (e) { /* se reconstruye abajo */ }
+  // Registros anteriores a v23: la única asignación conocida es la del campo "mes".
+  const h = historialVacio();
+  if (d && d.mes && d.fechaProgramada) {
+    const f = aISO(new Date(d.fechaProgramada));
+    h.asignaciones.push({ mes: d.mes, f, t: 'nueva', ciclo: 1 });
+  }
+  return h;
+}
+
+function nuncaAsignado(c) {
+  return !c.fechaProgramada && !(c.historial && c.historial.asignaciones && c.historial.asignaciones.length);
+}
+
+function asignadoEnMes(c, mesLabel) {
+  return !!(c.historial && c.historial.asignaciones.some(a => a.mes === mesLabel));
+}
+
+function registrarAsignacion(c, mesLabel, fISO, tipo) {
+  if (!c.historial) c.historial = historialVacio();
+  if (asignadoEnMes(c, mesLabel)) return;
+  c.historial.asignaciones.push({ mes: mesLabel, f: fISO, t: tipo, ciclo: c.historial.ciclo });
+}
+
+// Cierra el ciclo actual (queda en el historial) y deja la fila lista para una nueva gestión.
+// Los comentarios se conservan. En Documentos, los Actualizados que cumplieron 180 días
+// vuelven a Pendiente.
+function reiniciarCiclo(c, area, refISO) {
+  if (!c.historial) c.historial = historialVacio();
+  const cierre = { ciclo: c.historial.ciclo, tipoRespuesta: c.tipoRespuesta || '', fechaGestion: c.fechaGestion || '' };
+  if (area === 'lineas' && c.nuevaLinea) cierre.nuevaLinea = c.nuevaLinea;
+  if (area === 'documentacion') {
+    docsVencidos(c, refISO).forEach(n => { c.docs[n] = { e: 'Pendiente' }; });
+    cierre.docs = JSON.parse(JSON.stringify(c.docs || {}));
+  }
+  c.historial.ciclos.push(cierre);
+  c.historial.ciclo += 1;
+  c.tipoRespuesta = 'Sin Gestión';
+  c.fechaGestion = '';
+  c.proximaGestion = '';
+  if (area === 'lineas') c.nuevaLinea = '';
+}
+
+// ── Control de la columna historialJSON ──
+// El backend descarta en silencio las columnas sin encabezado: sin esta columna el
+// historial se perdería. Si falta, se avisa y "Asignar mes" queda bloqueado.
+const FALTA_HISTORIAL = { documentacion: false, lineas: false };
+function verificarColumnaHistorial(area, hoja, datos) {
+  FALTA_HISTORIAL[area] = !!(datos && datos.length && !Object.prototype.hasOwnProperty.call(datos[0], 'historialJSON'));
+  if (FALTA_HISTORIAL[area]) {
+    const banner = document.getElementById('error-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.textContent = `⚠️ Falta la columna "historialJSON" en la hoja ${hoja} de la planilla. Agregala en la fila 1 (como encabezado) y recargá la página. Hasta entonces "Asignar mes" queda bloqueado.`;
+    }
+  }
+}
+
 // Un cliente está en la bandeja si fue asignado y, o bien es del mes en curso,
-// o bien quedó abierto de un mes anterior (arrastre).
+// o bien su ciclo sigue abierto (arrastre).
 function enBandeja(c, area, mesLabel) {
   if (!c || !c.fechaProgramada) return false;
   const mes = mesLabel || fmtMonth(new Date());
   if ((c.mes || '') === mes) return true;
-  return AREAS_ASIGNACION[area].elegible(c);
+  return AREAS_ASIGNACION[area].abierto(c);
 }
+
 
 // ── Filtro Asignados / Todos (pestañas 3 y 4) ──
 let docAsigFiltro = 'asignados';
@@ -3080,14 +3280,14 @@ function planificarAsignacion(area, year, monthIndex, cuentasMes, hoy) {
   const yaDelMes = [], arrastre = [], candidatos = [];
   datos.forEach((c, idx) => {
     if (c.fechaProgramada && (c.mes || '') === mesLabel) yaDelMes.push(idx);
-    else if (c.fechaProgramada && cfg.elegible(c)) arrastre.push(idx);
-    else if (!c.fechaProgramada && cfg.elegible(c)) candidatos.push(idx);
+    else if (c.fechaProgramada && cfg.abierto(c)) arrastre.push(idx);
+    else if (cfg.abierto(c) ? !c.fechaProgramada : cfg.reasignable(c, desdeISO)) candidatos.push(idx);
   });
 
-  // Prioridad: 1) nunca asignados ni gestionados, 2) última gestión más antigua, 3) orden de la cartera.
+  // Prioridad: 1) nunca asignados, 2) última gestión más antigua, 3) orden de la cartera.
   candidatos.sort((a, b) => {
     const ca = datos[a], cb = datos[b];
-    const na = (!ca.fechaGestion) ? 0 : 1, nb = (!cb.fechaGestion) ? 0 : 1;
+    const na = nuncaAsignado(ca) ? 0 : 1, nb = nuncaAsignado(cb) ? 0 : 1;
     if (na !== nb) return na - nb;
     const ga = ultimaGestionISO(ca), gb = ultimaGestionISO(cb);
     if (ga !== gb) return ga < gb ? -1 : 1;
@@ -3095,7 +3295,7 @@ function planificarAsignacion(area, year, monthIndex, cuentasMes, hoy) {
   });
 
   const cupo = Math.max(0, cuentasMes - yaDelMes.length - arrastre.length);
-  const plan = { area, mesLabel, cuentasMes, dias, yaDelMes, arrastre, disponibles: candidatos.length, cupo, nuevos: [] };
+  const plan = { area, mesLabel, cuentasMes, dias, desdeISO, yaDelMes, arrastre, disponibles: candidatos.length, cupo, nuevos: [] };
   if (!dias.length || !cupo) return plan;
 
   // Carga de cada día con lo que ya está en la bandeja (asignados del mes + arrastre con fecha en el mes).
@@ -3112,7 +3312,7 @@ function planificarAsignacion(area, year, monthIndex, cuentasMes, hoy) {
     let i = carga.findIndex((n, k) => n < cupos[k]);
     if (i < 0) i = carga.indexOf(Math.min(...carga));
     carga[i]++;
-    plan.nuevos.push({ idx, fecha: dias[i] });
+    plan.nuevos.push({ idx, fecha: dias[i], motivo: cfg.motivo(datos[idx], desdeISO) });
   });
   plan.nuevos.sort((a, b) => a.fecha - b.fecha || a.idx - b.idx);
   plan.cupos = cupos;
@@ -3145,6 +3345,7 @@ function previsualizarAsignacion() {
     const cfg = AREAS_ASIGNACION[p.area];
     const datos = cfg.datos();
     const avisos = [];
+    if (FALTA_HISTORIAL[p.area]) avisos.push(`Falta la columna <b>historialJSON</b> en la hoja <b>${p.area === 'lineas' ? 'LineaClients' : 'DocClients'}</b>. Agregala en la fila 1 de la planilla y recargá la página: sin ella no se puede asignar.`);
     if (!p.dias.length) avisos.push('No quedan días hábiles en el mes (revisá los días no laborables).');
     if (p.arrastre.length + p.yaDelMes.length >= p.cuentasMes) {
       avisos.push(`La bandeja ya tiene ${p.arrastre.length + p.yaDelMes.length} cuentas (arrastre + asignadas este mes), que ocupan las ${p.cuentasMes} del mes: no se asignan cuentas nuevas.`);
@@ -3156,7 +3357,7 @@ function previsualizarAsignacion() {
     const filasDias = Object.keys(porDia).map(k => `<tr><td>${k}</td><td>${porDia[k]}</td></tr>`).join('');
     const filasCli = p.nuevos.map(n => {
       const c = datos[n.idx];
-      return `<tr><td>${fmtDate(n.fecha)}</td><td>${c.codigoCliente || ''}</td><td>${c.nombreCliente || ''}</td><td>${c.fechaGestion ? 'Últ. gestión ' + c.fechaGestion : 'Nunca gestionado'}</td></tr>`;
+      return `<tr><td>${fmtDate(n.fecha)}</td><td>${c.codigoCliente || ''}</td><td>${c.nombreCliente || ''}</td><td>${n.motivo}</td></tr>`;
     }).join('');
     return `
       <div class="asig-bloque">
@@ -3165,8 +3366,8 @@ function previsualizarAsignacion() {
           <div class="asig-kpi"><b>${p.cuentasMes}</b><span>Cuentas a asignar por mes</span></div>
           <div class="asig-kpi"><b>${p.arrastre.length}</b><span>Arrastradas abiertas de meses anteriores</span></div>
           <div class="asig-kpi"><b>${p.yaDelMes.length}</b><span>Ya asignadas en ${p.mesLabel}</span></div>
-          <div class="asig-kpi"><b>${p.nuevos.length}</b><span>Nuevas a asignar</span></div>
-          <div class="asig-kpi"><b>${p.disponibles}</b><span>Elegibles sin asignar en la cartera</span></div>
+          <div class="asig-kpi"><b>${p.nuevos.length}</b><span>A asignar (nuevas y reasignadas)</span></div>
+          <div class="asig-kpi"><b>${p.disponibles}</b><span>Disponibles en la cartera (nunca asignadas o para reasignar)</span></div>
           <div class="asig-kpi"><b>${p.dias.length}</b><span>Días hábiles disponibles</span></div>
         </div>
         ${avisos.map(a => `<div class="asig-aviso">⚠️ ${a}</div>`).join('')}
@@ -3178,7 +3379,8 @@ function previsualizarAsignacion() {
       </div>`;
   }).join('');
 
-  const hayNuevos = planes.some(p => p.nuevos.length);
+  const hayNuevos = planes.some(p => p.nuevos.length || p.arrastre.some(i => !asignadoEnMes(AREAS_ASIGNACION[p.area].datos()[i], p.mesLabel)))
+    && !FALTA_HISTORIAL.documentacion && !FALTA_HISTORIAL.lineas;
   cont.innerHTML = `
     ${bloques}
     <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
@@ -3199,17 +3401,25 @@ async function confirmarAsignacion() {
   const statusEl = document.getElementById('asig-status');
   const { year, monthIndex } = _planAsignacion;
   // Se vuelve a calcular con los datos actuales por si algo cambió mientras se miraba la vista previa.
+  if (FALTA_HISTORIAL.documentacion || FALTA_HISTORIAL.lineas) { previsualizarAsignacion(); return; }
   const planes = ['documentacion', 'lineas'].map(a => planificarAsignacion(a, year, monthIndex, PARAMS.minClientes, new Date()));
   planes.forEach(p => {
-    const datos = AREAS_ASIGNACION[p.area].datos();
+    const cfg = AREAS_ASIGNACION[p.area];
+    const datos = cfg.datos();
     p.nuevos.forEach(n => {
-      datos[n.idx].fechaProgramada = new Date(n.fecha.getFullYear(), n.fecha.getMonth(), n.fecha.getDate());
-      datos[n.idx].mes = p.mesLabel;
+      const c = datos[n.idx];
+      const esReasignacion = !cfg.abierto(c);
+      if (esReasignacion) reiniciarCiclo(c, p.area, p.desdeISO);
+      c.fechaProgramada = new Date(n.fecha.getFullYear(), n.fecha.getMonth(), n.fecha.getDate());
+      c.mes = p.mesLabel;
+      registrarAsignacion(c, p.mesLabel, aISO(c.fechaProgramada), esReasignacion ? 'reasignacion' : 'nueva');
     });
+    // Las arrastradas también cuentan como asignadas en este mes (para el tablero).
+    p.arrastre.forEach(idx => registrarAsignacion(datos[idx], p.mesLabel, aISO(datos[idx].fechaProgramada), 'arrastre'));
   });
   if (statusEl) { statusEl.textContent = '⏳ Guardando…'; statusEl.style.color = '#E65100'; }
-  const rDoc = planes[0].nuevos.length ? await saveDocClientsToStorage() : { ok: true };
-  const rLin = planes[1].nuevos.length ? await saveLineaClientsToStorage() : { ok: true };
+  const rDoc = (planes[0].nuevos.length || planes[0].arrastre.length) ? await saveDocClientsToStorage() : { ok: true };
+  const rLin = (planes[1].nuevos.length || planes[1].arrastre.length) ? await saveLineaClientsToStorage() : { ok: true };
   renderDocTable();
   renderLineasTable();
   if (rDoc.ok && rLin.ok) {
@@ -3236,7 +3446,7 @@ function planificarReprogramacion(area, hoy) {
     if (c.fechaProgramada) { const k = aISO(c.fechaProgramada); cargaPorDia[k] = (cargaPorDia[k] || 0) + 1; }
   });
   datos.forEach((c, idx) => {
-    if (!c.fechaProgramada || c.fechaGestion || !cfg.elegible(c)) return;
+    if (!c.fechaProgramada || c.fechaGestion || !cfg.abierto(c)) return;
     const f = new Date(c.fechaProgramada);
     const iso = aISO(f);
     if (iso < hoyISO || esDiaHabil(f)) return;
@@ -3359,7 +3569,7 @@ const claveCodigo = c => String(c && c.codigoCliente !== undefined && c.codigoCl
 function filaDocNueva(c) {
   return {
     codigoCliente: c.codigoCliente, nroDocumento: c.nroDocumento || '', nombreCliente: c.nombreCliente || '',
-    tipoCliente: c.tipoCliente || '', documentoActualizar: '', fechaProgramada: null, fechaGestion: '',
+    tipoCliente: c.tipoCliente || '', docs: {}, historial: historialVacio(), fechaProgramada: null, fechaGestion: '',
     tipoRespuesta: 'Sin Gestión', _estadoOrig: '', proximaGestion: '', comentarios: [], mes: ''
   };
 }
@@ -3367,7 +3577,7 @@ function filaDocNueva(c) {
 function filaLineaNueva(c) {
   return {
     codigoCliente: c.codigoCliente, nroDocumento: c.nroDocumento || '', nombreCliente: c.nombreCliente || '',
-    tipoCliente: c.tipoCliente || '', lineaVigente: String(c.lineaVigente || '').replace(/[^\d]/g, ''),
+    tipoCliente: c.tipoCliente || '', historial: historialVacio(), lineaVigente: String(c.lineaVigente || '').replace(/[^\d]/g, ''),
     fechaProgramada: null, fechaGestion: '', tipoRespuesta: 'Sin Gestión', _estadoOrig: '',
     proximaGestion: '', nuevaLinea: '', comentarios: [], mes: ''
   };
